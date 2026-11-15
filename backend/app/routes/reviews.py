@@ -24,13 +24,9 @@ def get_all_reviews():
 
 @review_bp.get('/book')
 def get_book_reviews():
-    if not request.is_json:
-        return jsonify({'error' : 'Request must be JSON object'}), 400
     
-    book_data = request.get_json()
-
-    title = book_data.get('title')
-    author = book_data.get('author')
+    title = request.args.get('title')
+    author = request.args.get('author')
 
     if not title or not author:
         return jsonify({'error' : 'title and author required'}), 400
@@ -96,7 +92,6 @@ def add_review(username):
         return jsonify({'error' : 'JSON object required'}), 400
 
     book_id = review_data.get('book_id')
-    user_id = review_data.get('user_id')
     review_text = review_data.get('review_text') or None
     visibility = review_data.get('visibility') or None
     rating = review_data.get('rating')
@@ -105,8 +100,6 @@ def add_review(username):
     
     if not book_id:
         errors['book_id'] = 'book_id required'
-    if not user_id:
-        errors['user_id'] = 'user_id requried'
     if not rating:
         errors['rating'] = 'rating required'
 
@@ -114,6 +107,10 @@ def add_review(username):
         return jsonify(e for e in errors), 400
 
     conn = get_db()
+
+    sql = 'SELECT user_id FROM users WHERE username=?'
+    user = conn.execute(sql, (username,)).fetchone()
+    user_id = user['user_id']
 
     sql = 'INSERT INTO reviews (user_id, book_id, rating'
     bindings = [user_id, book_id, rating]

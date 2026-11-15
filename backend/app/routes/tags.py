@@ -20,6 +20,8 @@ def get_available_tags():
     conn = get_db()
 
     rows = conn.execute(sql).fetchall()
+    
+    close_db()
 
     if not rows:
         return jsonify({'error' : 'GET tags failed'}), 404

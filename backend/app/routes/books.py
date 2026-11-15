@@ -1,6 +1,7 @@
 from flask import jsonify, request, Blueprint
 from app.db import get_db, close_db
 from app import config
+from app.util import build_sql_statement
 
 book_bp = Blueprint('book', __name__)
 
@@ -18,10 +19,9 @@ def get_all_books():
 
 @book_bp.get('/browse')
 def search_books():
-    query = request.get_json()
 
-    title = query.get('title') or None
-    author = query.get('author') or None
+    title = request.args.get('title')
+    author = request.args.get('author')
 
     if not title and not author:
         return jsonify({'error' : 'title or author required'}), 400
@@ -33,7 +33,7 @@ def search_books():
         sql = 'SELECT * FROM books WHERE title=? AND author=?'
         books = conn.execute(sql, (title, author)).fetchall()
 
-    if title:
+    elif title:
         sql = (
             'SELECT * FROM books '
             'WHERE title=?'
@@ -41,7 +41,7 @@ def search_books():
 
         books = conn.execute(sql, (title,)).fetchall()
 
-    if author:
+    elif author:
         sql = (
             'SELECT * FROM books '
             'WHERE author=?'
@@ -49,7 +49,7 @@ def search_books():
 
         books = conn.execute(sql, (author,)).fetchall()
 
-    if books is None:
+    if books is []:
         return jsonify({'message' : 'No results found'}), 200
 
     return jsonify([dict(b) for b in books]), 200
@@ -78,37 +78,14 @@ def add_book():
     if len(errors) > 0:
         return jsonify(e for e in errors), 400
 
-    sql = 'INSERT INTO books (author, title, publication_year'
-    vals = 3
-    bindings = [author, title, publication_year]
-    
-    if synopsis:
-        bindings.append(synopsis)
-        sql += ', synopsis'
-        vals += 1
-
-    if isbn:
-        bindings.append(isbn)
-        sql += ', isbn'
-        vals += 1
-
-    if page_count:
-        bindings.append(page_count)
-        sql += ', page_count'
-        vals += 1
-
-    if cover:
-        bindings.append(cover)
-        sql += ', cover'
-        vals+= 1
-
-    sql += ') VALUES (?'
-
-    for i in range(vals-1):
-        sql += ',?'
-
-    sql += ')'
-    print(sql)
+    sql, bindings = build_sql_statement(
+        'books',
+        [author, title, publication_year],
+        ['author', 'title', 'publication_year'],
+        3,
+        [synopsis, isbn, page_count, cover],
+        ['synopsis', 'isbn', 'page_count', 'cover']
+    )
 
     conn = get_db()
 
@@ -212,6 +189,9 @@ def add_book_tag(book_id):
     sql = 'SELECT tag_id FROM tags WHERE tag_name=?'
 
     row = conn.execute(sql, (tag_name,)).fetchone()
+    if not row:
+        return jsonify({'error' : 'record retrieval failed'}), 404
+
     tag_id = row['tag_id']
 
     sql = '''

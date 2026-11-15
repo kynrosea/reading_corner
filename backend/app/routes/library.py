@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app.db import get_db, close_db
 from app.util import build_sql_statement
+from datetime import date
 from app import config
 import sqlite3
 
@@ -70,6 +71,9 @@ def update_library_book(username, author, title):
         )
 
         row = conn.execute(sql, (username, title, author)).fetchone()
+        
+        if not row:
+            return jsonify({'error' : 'record retrieval failed'}), 404
 
         if row['status'] != status:
             errors['status'] = 'status update failed'
@@ -95,6 +99,8 @@ def update_library_book(username, author, title):
         )
 
         row = conn.execute(sql, (username, title, author)).fetchone()
+        if not row:
+            return jsonify({'error' : 'record retrieval failed'}), 404
 
         if row['category'] != category:
             errors['category'] = 'category update failed'
@@ -119,7 +125,9 @@ def update_library_book(username, author, title):
         )
 
         row = conn.execute(sql, (username, title, author)).fetchone()
-
+        if not row:
+            return jsonify({'error' : 'record retrieval failed'}), 404
+        
         if row['start_date'] != start_date:
             errors['start_date'] = 'start_date update failed'
 
@@ -144,6 +152,8 @@ def update_library_book(username, author, title):
         )
 
         row = conn.execute(sql, (username, title, author)).fetchone()
+        if not row:
+            return jsonify({'error' : 'record retrieval failed'}), 404
 
         if row['finished_date'] != finished_date:
             errors['finished_date'] = 'finished_date update failed'
@@ -186,19 +196,22 @@ def add_user_book(username, author, title):
 
     conn = get_db()
 
-    sql = (
-        'SELECT user_id, book_id FROM user_books '
-        'WHERE username=? AND title=? AND author=?'
-    )
-
     sql = 'SELECT user_id FROM users WHERE username=?'
 
     row = conn.execute(sql, (username,)).fetchone()
 
+    if not row:
+        return jsonify({'error' : 'record retrieval failed'}), 404
+
     user_id = row['user_id']
+
+    
 
     sql = 'SELECT book_id FROM books WHERE title=? AND author=?'
     row = conn.execute(sql, (title, author)).fetchone()
+    
+    if not row:
+        return jsonify({'error' : 'record retrieval failed'}), 404
 
     book_id = row['book_id']
 
@@ -217,6 +230,8 @@ def add_user_book(username, author, title):
 
     row = conn.execute(sql, (user_id, book_id)).fetchone()
 
+    close_db()
+
     if not row:
         return jsonify({'error' : 'Insertion failed'}), 404
 
@@ -227,18 +242,10 @@ def filter_library(username):
     if not username:
         return jsonify({'error' : 'username is required'}), 400
 
-    if not request.is_json:
-        return jsonify({'error' : 'Request must be JSON object'}), 400
-
-    query = request.get_json()
-
-    if not query:
-        return jsonify({'error' : 'JSON object data required'}), 400
-
-    title = query.get('title')
-    author = query.get('author')
-    category = query.get('category')
-    status = query.get('status')
+    title = request.args.get('title')
+    author = request.args.get('author')
+    category = request.args.get('category')
+    status = request.args.get('status')
 
     conn = get_db()
     results = {}
@@ -248,7 +255,7 @@ def filter_library(username):
             'SELECT * FROM user_library AS ul '
             'JOIN books AS b '
             '   ON ul.book_id = b.book_id '
-            'JOIN users AS u'
+            'JOIN users AS u '
             '   ON ul.user_id = u.user_id '
             'WHERE ('
             '   b.book_id IN (SELECT book_id FROM books WHERE title=?) '
@@ -256,44 +263,78 @@ def filter_library(username):
             '   u.user_id = (SELECT user_id FROM users WHERE username=?) '
             ')'
         )
+
+        sql = '''
+            SELECT * FROM user_library AS ul
+            JOIN books AS b
+                ON ul.book_id = b.book_id
+            JOIN users AS u
+                ON ul.user_id = u.user_id
+            WHERE
+                b.book_id IN (SELECT book_id FROM books WHERE title=?)
+                AND
+                u.user_id = (SELECT user_id FROM users WHERE username=?)
+        '''
         rows = conn.execute(sql, (title, username)).fetchall()
 
+        if rows == []:
+            return jsonify({'error' : 'record retrieval failed'}), 404
+        
         for r in rows:
             user_id = r['user_id']
             book_id = r['book_id']
             results[(user_id, book_id)] = r
         
-
     if author:
-        sql = (
-            'SELECT * FROM user_library AS ul '
-            'JOIN books AS b '
-            '   ON ul.book_id = b.book_id '
-            'JOIN users AS u'
-            '   ON ul.user_id = u.user_id '
-            'WHERE ('
-            '   b.book_id IN (SELECT book_id FROM books WHERE author=?) '
-            'AND '
-            '   u.user_id = (SELECT user_id FROM users WHERE username=?) '
-            ')'
-        )
+        sql = '''
+            SELECT * FROM user_library AS ul
+            JOIN books AS b
+                ON ul.book_id = b.book_id
+            JOIN users AS u
+                ON ul.user_id = u.user_id
+            WHERE
+                b.book_id IN (SELECT book_id FROM books WHERE author=?)
+                AND
+                u.user_id = (SELECT user_id FROM users WHERE username=?)
+        '''
+
         rows = conn.execute(sql, (author, username)).fetchall()
+        if rows == []:
+            return jsonify({'error' : 'record retrieval failed'}), 404
+        
         for r in rows:
             user_id = r['user_id']
             book_id = r['book_id']
             results[(user_id, book_id)] = r
 
     if category:
-        sql = 'SELECT * FROM user_library WHERE category=?'
-        rows = conn.execute(sql, (category,)).fetchall()
+        sql = '''
+            SELECT * FROM user_library AS ul
+            JOIN users AS u
+                ON ul.user_id = u.user_id
+            WHERE ul.category=? AND u.username=?
+        '''
+        rows = conn.execute(sql, (category,username)).fetchall()
+        if rows == []:
+            return jsonify({'error' : 'record retrieval failed'}), 404
+        
         for r in rows:
             user_id = r['user_id']
             book_id = r['book_id']
             results[(user_id, book_id)] = r
 
     if status:
-        sql = 'SELECT * FROM user_library WHERE status=?'
-        rows = conn.execute(sql, (status,)).fetchall()
+        sql = '''
+            SELECT * FROM user_library AS ul
+            JOIN users AS u
+                ON ul.user_id = u.user_id
+            WHERE ul.status=? AND u.username=?
+        '''
+        rows = conn.execute(sql, (status, username)).fetchall()
+        
+        if rows == []:
+            return jsonify({'error' : 'record retrieval failed'}), 404
+
         for r in rows:
             user_id = r['user_id']
             book_id = r['book_id']
@@ -325,7 +366,7 @@ def get_user_reading_logs(username):
 
     close_db()
     
-    if not rows:
+    if rows == []:
         return jsonify({'message' : 'user has no reading logs'}), 200
 
     return jsonify([dict(r) for r in rows]), 200
@@ -380,7 +421,7 @@ def add_reading_log(username):
                 WHERE user_id=? AND book_id=?
             '''
 
-            conn.execute(sql, (user_id, book_id))
+            conn.execute(status_update, (user_id, book_id))
         
             cursor = conn.execute(sql, tuple(bindings))
 
@@ -406,7 +447,7 @@ def add_reading_log(username):
     if not row:
         return jsonify({'error' : 'log insertion failed'}), 404
 
-    return jsonify(dict(r)), 200
+    return jsonify(dict(row)), 200
     
 
         

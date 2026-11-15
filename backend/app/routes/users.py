@@ -166,12 +166,14 @@ def delete_user(username):
         'WHERE username=?'
     )
 
-    cursor = conn.execute(sql, (username,))
-    sql = 'SELECT * FROM users WHERE user_id=?'
-    user = conn.execute(sql, (cursor.lastrowid,)).fetchone()
+    conn.execute(sql, (username,))
+    sql = 'SELECT * FROM users WHERE username=?'
+    user = conn.execute(sql, (username,)).fetchone()
     
     if user:
         return jsonify({'error' : 'Account deletion failed'}), 404
+    
+    close_db()
 
     return {}, 200
 
@@ -188,13 +190,17 @@ def add_user_preferences(username):
     tag_id = preference['tag_id']
     does_like = preference['does_like']
 
-    if not tag_id or not does_like:
+    if not tag_id or does_like is None:
         return jsonify({'error' : 'tag_id and does_like is required'}), 400
 
     conn = get_db()
 
     sql = 'SELECT user_id FROM users WHERE username=?'
     user = conn.execute(sql, (username,)).fetchone()
+    
+    if not user:
+        return jsonify({'error' : 'record retrieval failed'}), 404
+
     user_id = user['user_id']
 
     # checking if user has 7 preferences already
@@ -205,10 +211,14 @@ def add_user_preferences(username):
     '''
 
     row = conn.execute(sql, (user_id,)).fetchone()
+
+    if not row:
+        return jsonify({'error' : 'record retrieval failed'}), 404
+
     current_pref_count = row['num_preferences']
     if current_pref_count >= 7:
         close_db()
-        return jsonify({'message' : 'max preferences reached'}), 204
+        return jsonify({'message' : 'max preferences reached'}), 200
 
     sql = '''
         INSERT INTO user_preferences
@@ -245,6 +255,8 @@ def get_user_preferences(username):
     '''
 
     rows = conn.execute(sql, (username,)).fetchall()
+
+    close_db()
 
     if not rows:
         return jsonify({'message' : 'user has no preferences'}), 200

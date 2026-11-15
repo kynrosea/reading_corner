@@ -62,6 +62,9 @@ def add_user_reward(username):
     
     sql = 'SELECT user_id FROM users WHERE username=?'
     user = conn.execute(sql, (username,)).fetchone()
+    if not user:
+        return jsonify({'error' : 'record retrieval failed'}), 404
+
     user_id = user['user_id']
 
     sql = '''
