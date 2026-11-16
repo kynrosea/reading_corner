@@ -11,8 +11,8 @@ This web application simulates a reading tracker where a user can add books to t
 ## Requirements
 - Python: 3.12.7
 - Node.js: 24.11.9
-- Required Python packages: (requirements.txt)[requirements.txt]
-- Required JavaScript packages: (package.json)[frontend/package.json]
+- Required Python packages: [requirements.txt](requirements.txt)
+- Required JavaScript packages: [package.json](frontend/package.json)
 
 ## Installation and Setup
 ### Database Setup
