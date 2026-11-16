@@ -165,6 +165,8 @@ SELECT u.user_id,
         r.reward_id,
         r.species,
         r.rarity,
+		r.image,
+		r.description,
         ur.duplicate_count
 FROM users AS u
 JOIN user_rewards AS ur

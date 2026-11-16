@@ -3,5 +3,15 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+	plugins: [react()],
+	server: {
+		proxy: {
+			'/books': 'http://127.0.0.1:5000',
+			'/users': 'http://127.0.0.1:5000',
+			'/library': 'http://127.0.0.1:5000',
+			'/reviews': 'http://127.0.0.1:5000',
+			'/tags': 'http://127.0.0.1:5000',
+			'/rewards': 'http://127.0.0.1:5000'
+		}
+	}
 })

@@ -10,10 +10,11 @@ from app.routes.library import library_bp
 from app.routes.tags import tag_bp
 from app.routes.rewards import reward_bp
 
-from app.db import close_db
+from app.db import close_db, init_db
 
 def create_app(test_config=None):
     app = Flask(__name__)
+
 
     if test_config:
         app.config.update(test_config)

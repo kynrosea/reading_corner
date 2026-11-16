@@ -20,7 +20,9 @@ def close_db(e=None):
 def init_db():
     db = get_db()
     
-    with open('app/sql/dump.sql', 'r', encoding='utf-8') as f:
+    with open('app/sql/schema.sql', 'r', encoding='utf-8') as f:
+        db.executescript(f.read())
+    with open('app/sql/insert_data.sql', 'r', encoding='utf-8') as f:
         db.executescript(f.read())
 
 

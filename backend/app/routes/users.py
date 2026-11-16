@@ -22,7 +22,47 @@ def get_users():
 
     return jsonify([dict(r) for r in rows]), 200
 
+@user_bp.get('/<username>')
+def get_user(username):
+    if not username:
+        return jsonify({'error' : 'username is required'}), 400
+
+    conn = get_db()
+
+    sql = 'SELECT * FROM users WHERE username=?'
+    user = conn.execute(sql, (username,)).fetchone()
+    close_db()
+
+    if not user:
+        return jsonify({'error' : 'user retrieval failed'}), 404
+
+    return jsonify(dict(user)), 200
+
 # TODO: add get endpoint for signing up that works with front end
+@user_bp.get('/login')
+def login():
+    
+    username = request.args.get('username')
+    email = request.args.get('email')
+
+    if not username and not email:
+        return jsonify({'error' : 'username and email required'}), 400
+
+    # check if user exists and return user_id if they do
+    sql = '''
+        SELECT * FROM users
+        WHERE username=? AND email=?
+    '''
+
+    conn = get_db()
+    user = conn.execute(sql, (username, email)).fetchone()
+    
+    close_db()
+
+    if not user:
+        return jsonify({'error' : 'user does not exist'}), 404
+
+    return jsonify(dict(user)), 200
 
 # NOTE: this pretty much done for now
 @user_bp.post('/signup')

@@ -1,21 +1,31 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router';
+import './App.css';
+import Home from './pages/Home';
+import BrowseBooks from './pages/BrowseBooks';
+import AddBook from './pages/AddBook';
+import Library from './pages/Library';
+import Login from './pages/Login';
+import Leaderboard from './pages/Leaderboard';
+import Rewards from './pages/Rewards';
 
+// responsible for defining app's pages rather than managing individual content
 function App() {
-	const [count, setCount] = useState(0)
-
-	{/* Specifies what the component displays */}
 	return (
-		<div>
-			<h1>Reading Corner</h1>
-			<p>Welcome to your cozy reading corner!</p>
-			<button>Browse Books</button>
-		</div>
+		<BrowserRouter>
+			<Routes>
+				<Route path='/' element={<Home />} />
+				<Route path='/browse' element={<BrowseBooks />} />
+				<Route path='/add-book' element={<AddBook />} />
+				<Route path='/my-library' element={<Library />} />
+				<Route path='/login' element={<Login />} />
+				<Route path='/leaderboard' element={<Leaderboard />} />
+				<Route path='/butterfly-garden' element={<Rewards />} />
+			</Routes>
+		</BrowserRouter>
+
 	);
+
 }
 
-{/* allows other files to import this component */}
+// allows other files to import this component
 export default App;

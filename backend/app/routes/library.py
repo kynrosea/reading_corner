@@ -23,12 +23,12 @@ def get_user_library(username):
 
     close_db()
 
-    if not books:
+    if books == []:
         return jsonify({'message' : 'No books found in library'}), 200
 
     return jsonify([dict(b) for b in books]), 200
 
-@library_bp.put('/<username>/<author>/<title>')
+@library_bp.put('/<username>/<title>/<author>')
 def update_library_book(username, author, title):
     if not username or not title or not author:
         return jsonify({'error' : 'Username, author, and title required'}), 400
@@ -49,34 +49,73 @@ def update_library_book(username, author, title):
     conn = get_db()
 
     errors = {}
+    reward = None
     
     if status:
-        sql = (
-            'UPDATE user_library '
-            'SET status=? '
-            'WHERE (user_id, book_id) = ('
-            '   SELECT user_id, book_id '
-            '   FROM user_books '
-            '   WHERE username=? AND title=? AND author=?)'
-        )
+        try:
+            conn.execute('BEGIN TRANSACTION')
 
-        conn.execute(sql, (status, username, title, author))
+            sql = '''
+                SELECT status FROM user_library
+                WHERE (user_id, book_id) = (
+                    SELECT user_id, book_id
+                    FROM user_books
+                    WHERE username=? AND title=? AND author=?
+                )
+            '''
 
-        sql = (
-            'SELECT status FROM user_library '
-            'WHERE (user_id, book_id) = ('
-            '   SELECT user_id, book_id '
-            '   FROM user_books '
-            '   WHERE username=? AND title=? AND author=?)'
-        )
+            row = conn.execute(sql, (username, title, author)).fetchone()
+            current_status = row['status']
 
-        row = conn.execute(sql, (username, title, author)).fetchone()
-        
-        if not row:
-            return jsonify({'error' : 'record retrieval failed'}), 404
+            if current_status != 'read' and status == 'read':
+                sql = '''
+                    UPDATE users
+                    SET leaf_balance=leaf_balance+50
+                    WHERE username=?
+                '''
 
-        if row['status'] != status:
-            errors['status'] = 'status update failed'
+                conn.execute(sql, (username,))
+
+                reward = {
+                    'leaves_earned' : 50,
+                    'message' : 'You earned 50 leaves!'
+                }
+
+                # should add error check here potentially
+
+            sql = (
+                'UPDATE user_library '
+                'SET status=? '
+                'WHERE (user_id, book_id) = ('
+                '   SELECT user_id, book_id '
+                '   FROM user_books '
+                '   WHERE username=? AND title=? AND author=?)'
+            )
+
+            conn.execute(sql, (status, username, title, author))
+
+            sql = (
+                'SELECT status FROM user_library '
+                'WHERE (user_id, book_id) = ('
+                '   SELECT user_id, book_id '
+                '   FROM user_books '
+                '   WHERE username=? AND title=? AND author=?)'
+            )
+
+            row = conn.execute(sql, (username, title, author)).fetchone()
+
+            conn.execute('END TRANSACTION')
+            
+            if not row:
+                return jsonify({'error' : 'record retrieval failed'}), 404
+
+            if row['status'] != status:
+                errors['status'] = 'status update failed'
+
+        except sqlite3.Error as e:
+            conn.execute('ROLLBACK')
+            return jsonify({'error' : e}), 500
+
 
     if category:
         sql = (
@@ -174,7 +213,7 @@ def update_library_book(username, author, title):
     if len(errors) > 0:
         return jsonify(e for e in errors), 404
 
-    return jsonify(dict(update)), 200
+    return jsonify({'update' : dict(update), 'reward': reward}), 200
 
 @library_bp.post('/<username>/<author>/<title>')
 def add_user_book(username, author, title):

@@ -30,13 +30,13 @@ def search_books():
     books = None
 
     if title and author:
-        sql = 'SELECT * FROM books WHERE title=? AND author=?'
+        sql = 'SELECT * FROM books WHERE LOWER(title)=LOWER(?) AND LOWER(author)=LOWER(?)'
         books = conn.execute(sql, (title, author)).fetchall()
 
     elif title:
         sql = (
             'SELECT * FROM books '
-            'WHERE title=?'
+            'WHERE LOWER(title)=LOWER(?)'
         )
 
         books = conn.execute(sql, (title,)).fetchall()
@@ -44,7 +44,7 @@ def search_books():
     elif author:
         sql = (
             'SELECT * FROM books '
-            'WHERE author=?'
+            'WHERE LOWER(author)=LOWER(?)'
         )
 
         books = conn.execute(sql, (author,)).fetchall()
@@ -76,20 +76,21 @@ def add_book():
         errors['publication_year'] = 'Publication year is required'
 
     if len(errors) > 0:
-        return jsonify(e for e in errors), 400
+        return jsonify([e for e in errors]), 400
 
-    sql, bindings = build_sql_statement(
-        'books',
-        [author, title, publication_year],
-        ['author', 'title', 'publication_year'],
-        3,
-        [synopsis, isbn, page_count, cover],
-        ['synopsis', 'isbn', 'page_count', 'cover']
-    )
 
     conn = get_db()
 
-    cursor = conn.execute(sql, tuple(bindings))
+    sql = '''
+        INSERT INTO books
+        (author, title, publication_year, synopsis, isbn, page_count, cover)
+        VALUES
+        (?,?,?,?,?,?,?)
+
+    '''
+
+    bindings = (author, title, publication_year, synopsis, isbn, page_count, cover)
+    cursor = conn.execute(sql, bindings)
     sql = 'SELECT * FROM books WHERE book_id=?'
     new_book = conn.execute(sql, (cursor.lastrowid,)).fetchone()
 
@@ -99,6 +100,28 @@ def add_book():
         return jsonify({'error' : 'Book insertion failed'}), 404
 
     return jsonify(dict(new_book)), 200
+
+@book_bp.delete('/book')
+def delete_book():
+    
+    title = request.args.get('title')
+    author = request.args.get('author')
+
+    if not title and not author:
+        return jsonify({'error' : 'title and author required'}), 400
+    
+    sql = 'DELETE FROM books WHERE title=? AND author=?'
+    conn = get_db()
+
+    conn.execute(sql, (title, author))
+    sql = 'SELECT * FROM books WHERE title=? AND author=?'
+    row = conn.execute(sql, (title, author)).fetchall()
+    close_db()
+    
+    if row:
+        return jsonify({'error' : 'book deletion failed'}), 404
+    
+    return [], 200
 
 @book_bp.put('/<book_id>')
 def update_book(book_id):

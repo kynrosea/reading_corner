@@ -153,9 +153,96 @@ def get_leaderboard():
 
     close_db()
     
-    if not rows:
-        return jsonify({'error' : 'GET leaderboard failed'}), 404
+    if rows == []:
+        return [], 200
 
     return jsonify([dict(r) for r in rows]), 200
+
+@reward_bp.put('/wish/<username>')
+def wish(username):
+    if not username:
+        return jsonify({'error' : 'username is required'}), 400
+
+    conn = get_db()
+
+    sql = '''
+        SELECT user_id FROM users WHERE username=?
+    '''
+
+
+    try:
+        user = conn.execute(sql, (username,)).fetchone()
+        if user:
+            user_id = user['user_id']
+    
+        conn.execute('BEGIN TRANSACTION')
+        
+        sql = '''
+            SELECT leaf_balance FROM users
+            WHERE username=?
+        '''
+
+        row = conn.execute(sql, (username,)).fetchone()
+        leaf_balance = row['leaf_balance']
+
+        if leaf_balance < 100:
+            return jsonify({'message' : 'Not enough leaves'}), 404
+
+        sql = '''
+            SELECT * FROM rewards
+            ORDER BY RANDOM()
+            LIMIT 1
+        '''
+
+        reward = conn.execute(sql).fetchone()
+        if not reward:
+            return jsonify({'error' : 'failed to retrieve reward'}), 404
+
+        reward_id = reward['reward_id']
+
+        sql = '''
+            UPDATE users
+            SET leaf_balance=leaf_balance-100
+            WHERE username=?
+        '''
+
+        conn.execute(sql, (username,))
+        user = conn.execute(
+            'SELECT * FROM users WHERE username=?',
+            (username,)
+        ).fetchone()
+
+        if not user:
+            return jsonify({'error' : 'failed to update leaf balance'}), 404
+
+        leaf_balance = user['leaf_balance']
+        
+        sql = '''
+            INSERT INTO user_rewards (user_id, reward_id)
+            VALUES (?,?)
+            ON CONFLICT (user_id, reward_id)
+            DO UPDATE
+                SET duplicate_count=duplicate_count+1
+        '''
+
+        conn.execute(sql, (user_id, reward_id))
+        user = conn.execute(
+            'SELECT * FROM user_rewards WHERE user_id=? AND reward_id=?',
+            (user_id, reward_id)
+        ).fetchone()
+        
+        conn.execute('END TRANSACTION');
+
+        close_db()
+        
+        if not user:
+            return jsonify({'error' : 'reward insertion failed'}), 404
+
+        return jsonify({'reward' : dict(reward), 'remaining_leaves' : leaf_balance}), 200
+
+
+    except sqlite3.Error as e:
+        conn.execute('ROLLBACK')
+        return jsonify({'error' : e}), 500
 
 
