@@ -2,7 +2,10 @@
 
 ## Project Overview
 This web application simulates a reading tracker where a user can add books to their personal collection, browse books in the database, receive rewards, and more to encourage building better reading habits. For this current submission, There are only a few key operations implemented, which will we be touched on later.
-
+## Testing Note
+The signup feature works only in the backend. The frontend is not rendering correctly for that operation, so please use the following test user information to log in to test the application.
+- Email: itzy_yuna@yahoo.com
+- Username: itzzzYUNA
 ## Languages and Frameworks Used
 - Frontend: React, TypeScript, Vite
 - Backend: Python, Flask
