@@ -29,7 +29,7 @@ The signup feature works only in the backend. The frontend is not rendering corr
 
 ## Run Instructions
 ### With run.sh script
-- I created a script that performs the setup, installation, and running of the application for you. You only have to call: `bash run.sh`
+- I created a script that performs the setup, installation, and running of the application for you. You still to activate virtual environment though. You only have to call: `bash run.sh`
 ### Manually
 - If you'd prefer to do the steps of installation and setup yourself, then just follow those instructions in that section. Then, once the setup is complete, do this command to run the application: `npm run dev`
 ### Access the App
