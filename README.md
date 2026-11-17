@@ -3,8 +3,8 @@
 ## Project Overview
 This web application simulates a reading tracker where a user can add books to their personal collection, browse books in the database, receive rewards, and more to encourage building better reading habits. For this current submission, There are only a few key operations implemented, which will we be touched on later.
 
-## Technologies
-- Frontend: React, TypeScripts, Vite
+## Languages and Frameworks Used
+- Frontend: React, TypeScript, Vite
 - Backend: Python, Flask
 - Database: SQLite
 
@@ -12,33 +12,51 @@ This web application simulates a reading tracker where a user can add books to t
 - Python: 3.12.7
 - Node.js: 24.11.9
 - Required Python packages: [requirements.txt](requirements.txt)
-- Required JavaScript packages: [package.json](frontend/package.json)
+- Required TypeScript packages: [package.json](frontend/package.json)
 
 ## Installation and Setup
+### Environment Setup
+- Create virtual environment (if not using one already): `python3 -m venv .venv`
+- Activate virtual environment: `source .venv/bin/activate`
+- Install backend dependencies: `pip install -r requirements.txt`
+- Install frontend dependencies: `npm install`
 ### Database Setup
 - In the root project directory, run the bash script to build the database: `bash backend/build_db.sh`
 - This does not perform any queries. This ensures that we are working with the same schema and data to replicate environment and results.
-### Backend Setup
-- Create or activate virtual environment: `source .venv/bin/activate`
-- Install dependencies: `pip -r install requirements.txt`
-- Run Flask in a separate terminal window from the frontend: `flask run`
-### Frontend Setup
-- Install JavaScript dependencies: `npm install`
-- In separate terminal window from the backend, start the Vite dev server: `npm run dev`
+
+## Run Instructions
+### With run.sh script
+- I created a script that performs the setup, installation, and running of the application for you. You only have to call: `bash run.sh`
+### Manually
+- If you'd prefer to do the steps of installation and setup yourself, then just follow those instructions in that section. Then, once the setup is complete, do this command to run the application: `npm run dev`
 ### Access the App
-- You can access the application through this link: http://localhost:5173
+- You can access the application through this link: [Reading Corner App](http://localhost:5173)
+- The full frontend URL is http://localhost:5173
+- The full backend URL is http://localhost:5000
 ## Required Database Operations
-| Operation | Application Feature |
-|---|---|
-| Search or browse | Browse and search available books |
-| Display related data | View a personal library using related book and user data |
-| Add data | Add a book to database |
-| Update or delete | Change a book's reading status |
-| Summary or report | View the leaderboard |
-| Additional operation | Spend leaves to receive a butterfly reward |
+### Search or Browse Data
+User is able to browse books and search for books based on the title and/or author. Any and all matching results will appear on the page. If no results match, then a message relaying that information will appear on the page.
+### Display Related Data
+When viewing a user's personal library, the application is displaying the status of that book from user_library, the title and author from books, and persistent data across pages from logged in user to access primary key that returns personal information.
+### Add Data
+A user can signup if they have not used the database already, which adds a user to the users table. A user can also add a book to the book table if the one they're searching for is not already in the database.
+### Update or Delete Data
+A user can delete a book from the database if they accidentally added the wrong book. This was meant to be in the form of an undo button, but for time's sake, it is an open delete button. This is obviously not the most secure operation for a web application, but for the purposes of this project, it demonstrates the idea. \
+Additionally, a user can update their reading status when viewing books in their personal library.
+### Summary or Report
+A user can view a leaderboard that displays all users with a public profile who have read at least 2 books in 2026. This utilizes an aggregate function, join, subquery, and group by to display these results.
+### Additional Meaningful Operation
+When viewing all of the rewards a user has, they can make a wish if they have enough leaves (the currency of the app). If they don't have enough leaves, then that option will not be available. However, if they do, then, through multiple SQL statements, a random reward will be obtained and displayed. If this reward was a duplicate, then the duplicate count of that reward will increase upon each insertion attempt. This is treated as a complete transaction.
+
+## Database Configuration
+- There is no separate database configuration.
+- The database file is stored in the backend directory, but the database initialization is taken care of in the build_db.sh script.
+- Other than the previously mentioned setup requirements, there are no additional configurations.
 
 ## Notes
 
 - Reading Corner uses SQLite as its primary persistent data store.
 - Database operations are performed through the Flask backend using SQL.
-- [Document any relevant assumptions or known limitations.]
+- There is a couple of assumptions and limitations in this application
+  - Assumption: There are not many, if any, books with duplicate titles and authors.
+  - Limitation: User can manipulate the reward system but switching between statuses
