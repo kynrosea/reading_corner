@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 
 interface Record {
 	username: string,
@@ -14,7 +15,7 @@ function Leaderboard() {
 
 	async function getLeaderboard() {
 		try {
-			const response = await fetch('/rewards/leaderboard');
+			const response = await fetch('/users/leaderboard');
 			if (!response.ok) {
 				throw new Error('Failed to retrieve leaderboard');
 			}
@@ -41,6 +42,11 @@ function Leaderboard() {
 
 	return (
 		<main>
+			<header>
+				<Link to='/'>
+					<button>Home</button>
+				</Link>
+			</header>
 			<h1>2026 Reading Leaderboard</h1>
 			<div>
 				{records.map((record) => (

@@ -41,11 +41,14 @@ export default function EditBookStatus({
 				}
 			);
 
-			const data = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data.error ?? 'Unable to update reading status');
+				const data = await response.json();
+				let errorMessage = `Request failed with status ${response.status}`;
+				throw new Error(data.error || errorMessage);
 			}
+			
+			const data = await response.json();
 
 			onUpdated();
 
@@ -57,8 +60,11 @@ export default function EditBookStatus({
 
 		
 		} catch (error) {
+			console.error(error);
 			setMessage(
-				error instanceof Error ? error.message : "Something went wrong."
+				error instanceof Error 
+					? error.message :
+					'Something went wrong!'
 			);
 		} finally {
 			setLoading(false);

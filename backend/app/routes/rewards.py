@@ -1,13 +1,35 @@
 from flask import Blueprint, jsonify, request
 from app.db import get_db, close_db
-from app.util import build_sql_statement
+import sqlite3
+from app.errors import ConflictError, NotFoundError
 
 reward_bp = Blueprint('reward', __name__)
 
 @reward_bp.get('/')
 def get_all_rewards():
     sql = '''
-        SELECT * FROM all_user_rewards;
+        SELECT *
+        FROM rewards
+    '''
+
+    conn = get_db()
+    
+    rows = conn.execute(sql).fetchall()
+
+    # base data in database has entries for the rewards table
+    # if this fails, it's an sqlite/database error
+    if rows == []:
+        return jsonify({'error' : 'Could not retrieve rewards'}), 500
+
+    return jsonify([dict(r) for r in rows]), 200
+
+# get all rewards across all users
+@reward_bp.get('/users')
+def get_all_user_rewards():
+    
+    sql = '''
+        SELECT * 
+        FROM all_user_rewards;
     '''
 
     conn = get_db()
@@ -16,32 +38,57 @@ def get_all_rewards():
 
     close_db()
 
+    # base data has entries for rewards table
+    # this should succeed; if not, then it's a database/sqlite error
     if not rows:
-        return jsonify({'error' : 'GET rewards failed'}), 404
+        return jsonify({'error' : 'Could not retrieve rewards'}), 500
 
     return jsonify([dict(r) for r in rows]), 200
 
+# get all user's rewards from user_rewards
 @reward_bp.get('/<username>')
 def get_user_rewards(username):
     if not username:
         return jsonify({'error' : 'username is required'}), 400
 
-    sql = '''
-        SELECT * FROM all_user_rewards
-        WHERE username=?
-    '''
+    try:
+        conn = get_db()
 
-    conn = get_db()
+        # check that user exists before querying user_rewards
+        sql = '''
+            SELECT *
+            FROM users
+            WHERE username=?
+        '''
+        user = conn.execute(sql, (username,)).fetchone()
+        if not user:
+            raise NotFoundError('Could not find user')
 
-    rows = conn.execute(sql, (username,)).fetchall()
+        sql = '''
+            SELECT * 
+            FROM all_user_rewards
+            WHERE username=?
+        '''
 
-    close_db()
+        rows = conn.execute(sql, (username,)).fetchall()
 
-    if not rows:
-        return jsonify({'message' : 'user has no rewards'}), 404
+        close_db()
 
-    return jsonify([dict(r) for r in rows]), 200
+        if rows == []:
+            response = {
+                'data' : [],
+                'message' : 'user has no rewards'
+            }
+            return jsonify(response), 200
 
+        return jsonify([dict(r) for r in rows]), 200
+    
+    except sqlite3.Error as e:
+        return jsonify({'error' : str(e)}), 500
+    except NotFoundError as e:
+        return jsonify({'error' : str(e)}), 404
+
+# add reward to user_rewards table
 @reward_bp.post('/<username>')
 def add_user_reward(username):
     if not username:
@@ -49,45 +96,66 @@ def add_user_reward(username):
     if not request.is_json:
         return jsonify({'error' : 'Request must be JSON object'}), 400
 
-    data = request.get_json()
+    reward = request.get_json()
+    
     if not data:
-        return jsonify({'error' : 'JSON object data required'}), 400
+        return jsonify({'error' : 'JSON object data is required'}), 400
 
-    reward_id = data.get('reward_id')
+    reward_id = reward.get('reward_id')
 
     if not reward_id:
         return jsonify({'error' : 'reward_id is required'}), 400
 
-    conn = get_db()
+    try:
+
+        conn = get_db()
+
+        sql = '''
+            SELECT user_id
+            FROM users
+            WHERE username=?
+        '''
+        
+        user = conn.execute(sql, (username,)).fetchone()
+        if not user:
+            raise NotFoundError('Could not find user')
+
+        user_id = user['user_id']
+
+        sql = '''
+            INSERT INTO user_rewards 
+            (user_id, reward_id)
+            VALUES (?,?)
+            ON CONFLICT (user_id, reward_id)
+            DO UPDATE
+                SET duplicate_count=duplicate_count+1
+        '''
+        
+        conn.execute(sql, (user_id, reward_id))
+
+        sql = '''
+            SELECT *
+            FROM user_rewards
+            WHERE user_id=? AND reward_id=?
+        '''
+
+        row = conn.execute(sql, (user_id, reward_id)).fetchone()
+
+        close_db()
+
+        if not row:
+            raise sqlite3.Error('Could not insert user\'s reward')
+
+        return jsonify(dict(row)), 200
     
-    sql = 'SELECT user_id FROM users WHERE username=?'
-    user = conn.execute(sql, (username,)).fetchone()
-    if not user:
-        return jsonify({'error' : 'record retrieval failed'}), 404
-
-    user_id = user['user_id']
-
-    sql = '''
-        INSERT INTO user_rewards (user_id, reward_id)
-        VALUES (?,?)
-        ON CONFLICT (user_id, reward_id)
-        DO UPDATE
-            SET duplicate_count=duplicate_count+1
-    '''
+    except sqlite3.Error as e:
+        return jsonify({'error' : str(e)}), 500
+    except sqlite3.Error as e:
+        return jsonify({'error' : str(e)}), 500
+    except NotFoundError as e:
+        return jsonify({'error' : str(e)}), 404
     
-    conn.execute(sql, (user_id, reward_id))
-
-    sql = 'SELECT * FROM user_rewards WHERE user_id=? AND reward_id=?'
-
-    row = conn.execute(sql, (user_id, reward_id)).fetchone()
-
-    close_db()
-
-    if not row:
-        return jsonify({'error' : 'reward insertion failed'}), 404
-
-    return jsonify(dict(row)), 200
-
+# add reward to rewards table
 @reward_bp.post('/')
 def add_reward():
     if not request.is_json:
@@ -96,7 +164,7 @@ def add_reward():
     reward = request.get_json()
 
     if not reward:
-        return jsonify({'error' : 'JSON object data required'}), 400
+        return jsonify({'error' : 'JSON object data is required'}), 400
 
     species = reward.get('species')
     rarity = reward.get('rarity')
@@ -104,102 +172,114 @@ def add_reward():
     description = reward.get('description') or None
 
     if not species or not rarity:
-        return jsonify({'error' : 'species and rarity are required'}), 400
+        return jsonify({'error' : 'species and rarity are required'}), 422
 
-    conn = get_db()
+    try:
+        conn = get_db()
+
+        # check if reward has already been added to database
+        sql = '''
+            SELECT *
+            FROM rewards
+            WHERE species=?
+        '''
+        reward = conn.execute(sql, (species,)).fetchone()
+        if reward:
+            raise ConflictError('Reward with this species already exists in rewards table')
+
+        sql = '''
+            INSERT INTO rewards
+            (species, rarity, image, description)
+            VALUES
+            (?,?,?,?)
+        '''
+
+        cursor = conn.execute(sql, (species, rarity, image, description))
+        
+        sql = '''
+            SELECT *
+            FROM rewards
+            WHERE reward_id=?
+        '''
+        row = conn.execute(sql, (cursor.lastrowid,)).fetchone()
+        
+        
+        close_db()
+
+        if not row:
+            return jsonify({'error' : 'reward insertion failed'}), 404
+
+        return jsonify(dict(row)), 200
     
-    sql, bindings = build_sql_statement(
-            'rewards',
-            [species, rarity],
-            ['species', 'rarity'],
-            2,
-            [image, description],
-            ['image', 'description']
-    )
+    except sqlite3.Error as e:
+        return jsonify({'error' : str(e)}), 500
+    except sqlite3.Error as e:
+        return jsonify({'error' : str(e)}), 500
+    except ConflictError as e:
+        return jsonify({'error' : str(e)}), 409
 
-    cursor = conn.execute(sql, tuple(bindings))
-    sql = 'SELECT * FROM rewards WHERE reward_id=?'
-    row = conn.execute(sql, (cursor.lastrowid,)).fetchone()
-
-    close_db()
-
-    if not row:
-        return jsonify({'error' : 'reward insertion failed'}), 404
-
-    return jsonify(dict(row)), 200
-
-@reward_bp.get('/leaderboard')
-def get_leaderboard():
-    sql = '''
-        SELECT u.username, bc.books_completed
-        FROM users AS u
-        JOIN (
-            SELECT user_id, COUNT(*) AS books_completed
-            FROM user_library
-            WHERE status = "read"
-                AND finished_date IS NOT NULL
-                AND (finished_date >= "2026-01-01" AND finished_date <= "2026-12-31")
-            GROUP BY user_id
-            HAVING books_completed >= 2
-        ) AS bc
-            ON u.user_id = bc.user_id
-        WHERE u.profile_visibility = "public"
-        ORDER BY bc.books_completed DESC
-    '''
-
-    conn = get_db()
-    
-    rows = conn.execute(sql).fetchall()
-
-    close_db()
-    
-    if rows == []:
-        return [], 200
-
-    return jsonify([dict(r) for r in rows]), 200
-
+# allows a user to randomly obtain a reward through the wish system
+# the logic for the wish system, including rules/constraints is written here
 @reward_bp.put('/wish/<username>')
 def wish(username):
     if not username:
         return jsonify({'error' : 'username is required'}), 400
 
-    conn = get_db()
-
-    sql = '''
-        SELECT user_id FROM users WHERE username=?
-    '''
-
-
     try:
+        
+        conn = get_db()
+
+        sql = '''
+            SELECT user_id 
+            FROM users 
+            WHERE username=?
+        '''
+
         user = conn.execute(sql, (username,)).fetchone()
-        if user:
-            user_id = user['user_id']
+        if not user:
+            raise NotFoundError('Could not find user')
+        
+        user_id = user['user_id']
     
+        # this whole process is a transaction since we're updating values and inserting entries
+        # if one part fails, the whole transaction fails and will be rolled back
         conn.execute('BEGIN TRANSACTION')
         
         sql = '''
-            SELECT leaf_balance FROM users
+            SELECT leaf_balance 
+            FROM users
             WHERE username=?
         '''
 
         row = conn.execute(sql, (username,)).fetchone()
-        leaf_balance = row['leaf_balance']
+        initial_leaf_balance = row['leaf_balance']
+        
+        # cannot obtain a new reward if leaf balance is too low
+        if initial_leaf_balance < 100:
+            response = {
+                'reward' : [],
+                'remaining_leaves' : initial_leaf_balance
+            }
+            
+            return jsonify(response), 200
 
-        if leaf_balance < 100:
-            return jsonify({'message' : 'Not enough leaves'}), 404
-
+        # order by random() puts the rows in a random order
+        # limit 1 only returns one row
+        # this simulates obtaining a random entry
         sql = '''
-            SELECT * FROM rewards
+            SELECT * 
+            FROM rewards
             ORDER BY RANDOM()
             LIMIT 1
         '''
 
         reward = conn.execute(sql).fetchone()
         if not reward:
-            return jsonify({'error' : 'failed to retrieve reward'}), 404
+            raise sqlite3.Error('Could not retrieve reward')
 
         reward_id = reward['reward_id']
-
+        
+        # need to update the user's leaf_balance since they've made a successful wish
         sql = '''
             UPDATE users
             SET leaf_balance=leaf_balance-100
@@ -207,18 +287,22 @@ def wish(username):
         '''
 
         conn.execute(sql, (username,))
-        user = conn.execute(
-            'SELECT * FROM users WHERE username=?',
-            (username,)
-        ).fetchone()
 
-        if not user:
-            return jsonify({'error' : 'failed to update leaf balance'}), 404
+        sql = '''
+            SELECT *
+            FROM users
+            WHERE username=?
+        '''
+        user = conn.execute(sql, (username,)).fetchone()
 
         leaf_balance = user['leaf_balance']
+        if leaf_balance == initial_leaf_balance:
+            raise sqlite3.Error('Could not update leaf_balance')
         
+        # increasing number of duplicates if user already has rewards in user_rewards
         sql = '''
-            INSERT INTO user_rewards (user_id, reward_id)
+            INSERT INTO user_rewards 
+            (user_id, reward_id)
             VALUES (?,?)
             ON CONFLICT (user_id, reward_id)
             DO UPDATE
@@ -226,23 +310,29 @@ def wish(username):
         '''
 
         conn.execute(sql, (user_id, reward_id))
-        user = conn.execute(
-            'SELECT * FROM user_rewards WHERE user_id=? AND reward_id=?',
-            (user_id, reward_id)
-        ).fetchone()
+        sql = '''
+            SELECT *
+            FROM user_rewards
+            WHERE user_id=? AND reward_id=?
+        '''
+        user_reward = conn.execute(sql, (user_id, reward_id)).fetchone()
+
+        if not user_reward:
+            raise sqlite3.Error('Could not insert user\'s reward into user_rewards table')
         
         conn.execute('END TRANSACTION');
 
         close_db()
         
-        if not user:
-            return jsonify({'error' : 'reward insertion failed'}), 404
-
         return jsonify({'reward' : dict(reward), 'remaining_leaves' : leaf_balance}), 200
-
 
     except sqlite3.Error as e:
         conn.execute('ROLLBACK')
-        return jsonify({'error' : e}), 500
+        return jsonify({'error' : str(e)}), 500
+    except sqlite3.Error as e:
+        conn.execute('ROLLBACK')
+        return jsonify({'error' : str(e)}), 500
+    except NotFoundError as e:
+        return jsonify({'error' : str(e)}), 404
 
 

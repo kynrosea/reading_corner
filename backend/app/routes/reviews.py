@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.db import get_db, close_db
+import sqlite3
+from app.errors import NotFoundError
 
 review_bp = Blueprint('review', __name__)
 
@@ -7,18 +9,19 @@ review_bp = Blueprint('review', __name__)
 def get_all_reviews():
     conn = get_db()
 
-    sql = (
-        'SELECT * FROM reviews '
-        'WHERE visibility="public" '
-        'ORDER BY rating DESC'
-    )
+    sql = '''
+        SELECT * 
+        FROM reviews
+        WHERE visibility="public"
+        ORDER BY rating DESC
+    '''
 
     reviews = conn.execute(sql).fetchall()
 
     close_db()
 
-    if reviews is None:
-        return jsonify({'error' : 'GET public reviews failed'}), 404
+    if reviews == []:
+        return jsonify({'error' : 'Could not retrieve all reviews'}), 500
 
     return jsonify([dict(r) for r in reviews]), 200
 
@@ -33,21 +36,31 @@ def get_book_reviews():
    
     conn = get_db()
     
-    sql = (
-        'SELECT u.username, b.title, b.author, r.review_text, r.rating '
-        'FROM reviews AS r '
-        'JOIN users AS u '
-        '   ON u.user_id = r.user_id '
-        'JOIN books AS b '
-        '   ON b.book_id = r.book_id '
-        'WHERE b.author=? AND b.title=? AND visibility="public"'
-    )
+    # checking to see if book exists in db
+    sql = '''
+        SELECT * 
+        FROM books
+        WHERE title=? AND author=?
+    '''
+    row = conn.execute(sql, (title, author)).fetchone()
+    if row:
+        return jsonify({'error' : 'Could not find book in database'}), 404
+    
+    sql = '''
+        SELECT u.username, b.title, b.author, r.review_text, r.rating
+        FROM reviews AS r
+        JOIN users AS u 
+            ON u.user_id = r.user_id 
+        JOIN books AS b 
+            ON b.book_id = r.book_id 
+        WHERE b.author=? AND b.title=? AND visibility="public"
+    '''
 
     reviews = conn.execute(sql, (author, title)).fetchall()
 
     close_db()
     if not reviews:
-        return jsonify({'message' : 'No reviews found'}), 200
+        return [], 200
 
     return jsonify([dict(r) for r in reviews]), 200
 
@@ -58,33 +71,43 @@ def get_user_reviews(username):
 
     conn = get_db()
 
-    sql = (
-        'SELECT u.username, b.title, b.author, r.review_text, r.rating '
-        'FROM reviews AS r '
-        'JOIN users AS u '
-        '   ON u.user_id = r.user_id '
-        'JOIN books AS b '
-        '   ON r.book_id = b.book_id '
-        'WHERE u.username=? '
-        'ORDER BY rating DESC'
-    )
+    # checking if user exists in db
+    sql = '''
+        SELECT * 
+        FROM users 
+        WHERE username=?
+    '''
+    row = conn.execute(sql, (username,)).fetchone()
+    if not row:
+        return jsonify({'error' : 'Could not find user'}), 404
+
+    sql = '''
+        SELECT u.username, b.title, b.author, r.review_text, r.rating 
+        FROM reviews AS r 
+        JOIN users AS u 
+            ON u.user_id = r.user_id 
+        JOIN books AS b 
+            ON r.book_id = b.book_id 
+        WHERE u.username=? 
+        ORDER BY rating DESC
+    '''
 
     reviews = conn.execute(sql, (username,)).fetchall()
 
     close_db()
 
-    if not reviews:
-        return jsonify({'message' : 'No reviews found'}), 200
+    if reviews == []:
+        return [], 200
 
     return jsonify([dict(r) for r in reviews]), 200
 
 @review_bp.post('/user/<username>')
 def add_review(username):
     if not username:
-        return jsonify({'error' : 'Username is required'})
+        return jsonify({'error' : 'Username is required'}), 400
 
     if not request.is_json:
-        return jsonify({'error' : 'Request must be JSON object'})
+        return jsonify({'error' : 'Request must be JSON object'}), 400
 
     review_data = request.get_json()
 
@@ -92,54 +115,70 @@ def add_review(username):
         return jsonify({'error' : 'JSON object required'}), 400
 
     book_id = review_data.get('book_id')
+    creation_date = review_data.get('creation_date')
     review_text = review_data.get('review_text') or None
     visibility = review_data.get('visibility') or None
     rating = review_data.get('rating')
-    
-    errors = {}
-    
+
     if not book_id:
-        errors['book_id'] = 'book_id required'
+        return jsonify({'error' : 'book_id is required'}), 422
     if not rating:
-        errors['rating'] = 'rating required'
+        return jsonify({'error' : 'rating is required'}), 422
+    if not creation_date:
+        return jsonify({'error' : 'creation_date is required'}), 422
 
-    if len(errors) > 0:
-        return jsonify(e for e in errors), 400
 
-    conn = get_db()
+    try:
+                
+        conn = get_db()
 
-    sql = 'SELECT user_id FROM users WHERE username=?'
-    user = conn.execute(sql, (username,)).fetchone()
-    user_id = user['user_id']
+        # checking if user exists in database before querying
+        sql = '''
+            SELECT user_id 
+            FROM users 
+            WHERE username=?
+        '''
+        user = conn.execute(sql, (username,)).fetchone()
+        if not user:
+            raise NotFoundError('Could not find user')
+        
+        user_id = user['user_id']
 
-    sql = 'INSERT INTO reviews (user_id, book_id, rating'
-    bindings = [user_id, book_id, rating]
-    vals = 3
-    if review_text:
-        bindings.append(review_text)
-        sql += ', review_text'
-        vals += 1
-    if visibility:
-        bindings.append(visibility)
-        sql += ', visibility'
-        vals += 1
-    
-    sql += ') VALUES (?'
+        # checking if book exists in database before querying
+        sql = '''
+            SELECT *
+            FROM books
+            WHERE book_id=?
+        '''
+        book = conn.execute(sql, (book_id,)).fetchone()
+        if not book:
+            raise NotFoundError('Could not find book')
 
-    for i in range(1,vals):
-        sql += ',?'
-    
-    sql += ')'
+        sql = '''
+            INSERT INTO reviews
+            (user_id, book_id, rating, review_text, visibility)
+            VALUES
+            (?,?,?,?,?)
+        '''
+        
+        cursor = conn.execute(sql, (user_id, book_id, rating, review_text, visibility))
 
-    cursor = conn.execute(sql, tuple(bindings))
+        sql = '''
+            SELECT * 
+            FROM reviews 
+            WHERE review_id=?
+        '''
+        review = conn.execute(sql, (cursor.lastrowid,)).fetchone()
+        
+        close_db()
 
-    sql = 'SELECT * FROM reviews WHERE review_id=?'
-    review = conn.execute(sql, (cursor.lastrowid,)).fetchone()
+        if not review:
+            raise sqlite3.Error('Could not insert review')
 
-    close_db()
-
-    if not review:
-        return jsonify({'error' : 'Review insertion failed'}), 404
-
-    return jsonify(dict(review)), 200
-
+        return jsonify(dict(review)), 200
+    except sqlite3.IntegrityError as e:
+        return jsonify({'error' : str(e)}), 500
+    except sqlite3.Error as e:
+        return jsonify({'error' : str(e)}), 500
+    except NotFoundError as e:
+        return jsonify({'error' : str(e)}), 404

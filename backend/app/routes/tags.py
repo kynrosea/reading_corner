@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.db import get_db, close_db
+import sqlite3
+from app.errors import ConflictError
 
 tag_bp = Blueprint('tag', __name__)
 
@@ -7,12 +9,14 @@ tag_bp = Blueprint('tag', __name__)
 def get_available_tags():
     sql = '''
         WITH tags_intersection AS (
-            SELECT tag_id FROM tags
+            SELECT tag_id 
+            FROM tags
             INTERSECT
             SELECT tag_id FROM book_tags
         )
 
-        SELECT t.tag_name FROM tags AS t
+        SELECT t.tag_name 
+        FROM tags AS t
         JOIN tags_intersection AS ti
             ON ti.tag_id = t.tag_id;
      '''
@@ -23,8 +27,10 @@ def get_available_tags():
     
     close_db()
 
-    if not rows:
-        return jsonify({'error' : 'GET tags failed'}), 404
+    # if there are no available tags, then sqlite query failed
+    # the base data in the database has available tags so this should always succeed if the sql is correct
+    if rows == []:
+        return jsonify({'error' : 'Could not retrieve available tags'}), 500
 
     return jsonify([dict(r) for r in rows]), 200
 
@@ -38,25 +44,49 @@ def add_tag():
 
     tag_name = data.get('tag_name')
 
-    conn = get_db()
+    try:
+        
+        conn = get_db()
 
-    sql = '''
-        INSERT INTO tags
-        (tag_name)
-        VALUES
-        (?)
-    '''
+        # checking if tag is already in the tags table
+        sql = '''
+            SELECT * 
+            FROM tags
+            WHERE tag_name=?
+        '''
+        row = conn.execute(sql, (tag_name,)).fetchone()
+        if row:
+            raise ConflictError('tag is already in tags table')
 
-    cursor = conn.execute(sql, (tag_name,))
-    sql = 'SELECT * FROM tags WHERE tag_id=?'
+        sql = '''
+            INSERT INTO tags
+            (tag_name)
+            VALUES
+            (?)
+        '''
 
-    tag = conn.execute(sql, (cursor.lastrowid,)).fetchone()
+        conn.execute(sql, (tag_name,))
+        
+        sql = '''
+            SELECT * 
+            FROM tags 
+            WHERE tag_name=?
+        '''
 
-    close_db()
+        tag = conn.execute(sql, (tag_name,)).fetchone()
 
-    if not tag:
-        return jsonify({'error' : 'tag insertion failed'}), 404
+        close_db()
 
-    return jsonify(dict(tag)), 200
+        if not tag:
+            raise sqlite3.Error('Could not insert tag')
+
+        return jsonify(dict(tag)), 200
+    
+    except sqlite3.Error as e:
+        return jsonify({'error' : str(e)}), 500
+    except sqlite3.Error as e:
+        return jsonify({'error' : str(e)}), 500
+    except ConflictError as e:
+        return jsonify({'error' : str(e)}), 409
 
 

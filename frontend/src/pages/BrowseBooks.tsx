@@ -12,6 +12,7 @@ function BrowseBooks() {
 	// the initial value is an empty array
 	const [books, setBooks] = useState<Book[]>([]);
 	const [showBooks, setShowBooks] = useState(false);
+	const [message, setMessage] = useState('');
 	const [error, setError] = useState('');
 
 	async function getBooks() {
@@ -27,6 +28,7 @@ function BrowseBooks() {
 			const data: Book[] = await response.json();
 
 			console.log(data);
+			
 			setBooks(data);
 			setShowBooks(true);
 			setError('');
@@ -60,19 +62,31 @@ function BrowseBooks() {
 
 			const data: Book[] = await response.json();
 			console.log(data)
+			if (data.length === 0) {
+				setMessage('No results match query!');
+			} else {
+				setMessage('');
+			}	
+		
 			setBooks(data);
 			setShowBooks(true);
 			setError('');
 
 		} catch (error) {
 
-			console.error(error)
+			console.error(error.message)
 			setError('Could not search books');
+			setMessage('')
 		}
 	}
 
 	return (
 		<main>
+			<header>
+				<Link to='/'>
+					<button>Home</button>
+				</Link>
+			</header>
 			<h1>Browse Books</h1>
 			<div>
 				<h2>Search</h2>
@@ -92,6 +106,13 @@ function BrowseBooks() {
 					<button>Add Book</button>
 				</Link>
 			</div>
+			<br />
+			{message && (
+				<div className='message-banner' role='alert'>
+					{message}
+				</div>
+			)}
+		
 			<div>
 				{books.map((book) => (
 					<div key={book.book_id}>
@@ -100,6 +121,7 @@ function BrowseBooks() {
 					</div>
 				))}
 			</div>
+			<br />
 		</main>
 	);
 

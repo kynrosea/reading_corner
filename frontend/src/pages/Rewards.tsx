@@ -26,29 +26,30 @@ function Rewards() {
 
 	const user = context?.user;
 	const [leaves, setLeaves] = useState(0);
+	
+	async function loadRewards() {
+		try {
+			const response = await fetch(
+				`/rewards/${encodeURIComponent(user!.username)}`
+			);
+
+			if (!response.ok) {
+				throw new Error('Could not load user rewards')
+			}
+
+			const data: Butterfly[] = await response.json();
+
+			setButterflies(data);
+		} catch (error) {
+			console.error(error);
+			setMessage("Unable to load your butterflies.");
+		}
+	}
 
 	useEffect(() => {
 		if (!user) return;
 
-		async function loadRewards() {
-			try {
-				const response = await fetch(
-					`/rewards/${encodeURIComponent(user!.username)}`
-				);
-
-				if (!response.ok) {
-					throw new Error('Could not load user rewards')
-				}
-
-				const data: Butterfly[] = await response.json();
-
-				setButterflies(data);
-			} catch (error) {
-				console.error(error);
-				setMessage("Unable to load your butterflies.");
-			}
-		}
-
+		
 		void loadRewards();
 		void loadLeaves();
 		

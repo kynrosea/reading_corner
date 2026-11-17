@@ -1,13 +1,13 @@
 #!/bin/bash
 
-DB="reading_tracker.db"
+DB="backend/reading_tracker.db"
 
-echo "Recreating database..."
+echo "Recreating fresh database..."
 
 rm -f "$DB"
 
-sqlite3 "$DB" < "schema.sql"
-sqlite3 "$DB" < "insert_data.sql"
+sqlite3 "$DB" < "backend/app/sql/schema.sql"
+sqlite3 "$DB" < "backend/app/sql/insert_data.sql"
 
 echo
 echo "Done :)"

@@ -5,4 +5,8 @@ export interface Book {
 	title: string;
 	author: string;
 	publication_year: number;
+	synopsis: string;
+	isbn: string;
+	page_count: number;
+	cover: Blob
 }

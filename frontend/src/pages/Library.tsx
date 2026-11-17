@@ -38,7 +38,9 @@ function Library() {
 			);
 
 			if (!response.ok) {
-				throw new Error('Failed to retrieve library');
+				const errorData = await response.json()
+				let errorMessage = `Request failed with status ${response.status}`
+				throw new Error(errorData.error || errorMessage);
 			}
 
 			const data: Record[] = await response.json();
@@ -50,8 +52,8 @@ function Library() {
 
 			
 		} catch (error) {
-			console.error(error);
-			setError('Could not load library');
+			console.error(error.message);
+			setError(error.message);
 		}
 	}
 
@@ -83,7 +85,7 @@ function Library() {
 					<button>Home</button>
 				</Link>
 			</header>
-			<h1>Welcome to your personal library!</h1>
+			<h1>Welcome to your personal library, {user.first_name}!</h1>
 			<div>
 				{records.map((record) => (
 					<div key={record.book_id}>

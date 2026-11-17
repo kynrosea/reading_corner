@@ -1,0 +1,14 @@
+{
+
+	"scripts": {
+		"dev:backend": "cd backend && flask --app app run --debug",
+		"dev:frontend": "npm --prefix frontend run dev",
+		"dev": "concurrently -k -n flask,vite \"npm run dev:backend\" \"npm run dev:frontend\""
+	},
+
+	"devDependencies": {
+		"concurrently": "^10.0.7"
+	}
+
+
+}

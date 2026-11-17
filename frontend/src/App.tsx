@@ -7,6 +7,7 @@ import Library from './pages/Library';
 import Login from './pages/Login';
 import Leaderboard from './pages/Leaderboard';
 import Rewards from './pages/Rewards';
+import Signup from './pages/Signup';
 
 // responsible for defining app's pages rather than managing individual content
 function App() {
@@ -20,6 +21,7 @@ function App() {
 				<Route path='/login' element={<Login />} />
 				<Route path='/leaderboard' element={<Leaderboard />} />
 				<Route path='/butterfly-garden' element={<Rewards />} />
+				<Route path='/signup' element={<Signup />} />
 			</Routes>
 		</BrowserRouter>
 

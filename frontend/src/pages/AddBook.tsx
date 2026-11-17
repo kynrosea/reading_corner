@@ -3,8 +3,10 @@ import type { Book } from '../types/book.ts';
 
 function AddBook() {
 
-	const [message, setMessage] = useState('');
-	const [error, setError] = useState('');
+	const [addMessage, setAddMessage] = useState('');
+	const [deleteMessage, setDeleteMessage] = useState('');
+	const [addError, setAddError] = useState('');
+	const [deleteError, setDeleteError] = useState('');
 
 	async function handleSubmit(e) {
 		e.preventDefault();
@@ -38,18 +40,18 @@ function AddBook() {
 				body: JSON.stringify(bookData),
 			});
 
-			if (response.status === 400) {
-				setError('Check input fields and try again.');
-			} else if (!response.ok) {
-				throw new Error('Failed to add book');
+			if (!response.ok) {
+				const errorData = await response.json()
+				let errorMessage = `Request failed with status ${response.status}`
+				throw new Error(errorData.error || errorMessage);
 			}
 
 			console.log('Book insertion success!');
-			setMessage('Book added successfully!');
-			setError('');
-		} catch (error) {
-			console.error(error)
-			setError('Book could not be added :(');
+			setAddMessage('Book added successfully!');
+			setAddError('');
+		} catch (addError) {
+			console.error(addError.message);
+			setAddError(addError.message);
 		}
 	}
 
@@ -71,11 +73,11 @@ function AddBook() {
 			}
 
 			console.log('Book delete successful');
-			setMessage('Book deleted successfully!');
-			setError('');
-		} catch (error) {
-			console.error(error);
-			setError('Book could not be deleted :(');
+			setDeleteMessage('Book deleted successfully!');
+			setDeleteError('');
+		} catch (deleteError) {
+			console.error(deleteError);
+			setDeleteError('Book could not be deleted :(');
 		}
 	}
 
@@ -108,15 +110,15 @@ function AddBook() {
 					<input type='submit' value='Submit' />
 					<input type='reset' value='Reset' />
 					<br />
-					{error && (
+					{addError && (
 						<div className='error-banner' role='alert'>
-							{error}
+							{addError}
 						</div>
 					)}
 
-					{message && (
+					{addMessage && (
 						<div className='message-banner' role='alert'>
-							{message}
+							{addMessage}
 						</div>
 					)}
 				</form>
@@ -134,15 +136,15 @@ function AddBook() {
 					<br />
 					<input type='submit' value='DELETE' />
 					<br />
-					{error && (
+					{deleteError && (
 						<div className='error-banner' role='alert'>
-							{error}
+							{deleteError}
 						</div>
 					)}
 					
-					{message && (
+					{deleteMessage && (
 						<div className='message-banner' role='alert'>
-							{message}
+							{deleteMessage}
 						</div>
 					)}
 				</form>
