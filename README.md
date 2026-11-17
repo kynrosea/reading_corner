@@ -39,7 +39,7 @@ User is able to browse books and search for books based on the title and/or auth
 ### Display Related Data
 When viewing a user's personal library, the application is displaying the status of that book from user_library, the title and author from books, and persistent data across pages from logged in user to access primary key that returns personal information.
 ### Add Data
-A user can signup if they have not used the database already, which adds a user to the users table. A user can also add a book to the book table if the one they're searching for is not already in the database.
+A user can add a book to the book table if the one they're searching for is not already in the database. I am running into errors rendering the signup function for a user, but the backend operation does work. You can view it at the backend endpoints.
 ### Update or Delete Data
 A user can delete a book from the database if they accidentally added the wrong book. This was meant to be in the form of an undo button, but for time's sake, it is an open delete button. This is obviously not the most secure operation for a web application, but for the purposes of this project, it demonstrates the idea. \
 Additionally, a user can update their reading status when viewing books in their personal library.
