@@ -74,6 +74,19 @@ function Profile() {
 		if (!user) return;
 	
 	}, [user]);
+
+	if (!user) {
+		return (
+			<div className='login-prompt'>
+				<h1>Profile Settings</h1>
+				<p>Please log in to view your profile settings.</p>
+				<Link to='/login'>
+					<button className='basic-button'>Go to Login</button>
+				</Link>
+				
+			</div>
+		);
+	}
 	
 	return (
 		<main className='profile-container'>

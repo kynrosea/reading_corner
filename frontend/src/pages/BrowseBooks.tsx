@@ -72,7 +72,7 @@ function BrowseBooks() {
 	}
 
 	function hasBook(title, author) {
-		if (libraryInfo.some(book => (book.title===title, book.author===author))) {
+		if (libraryInfo.some(book => book.title===title && book.author===author)) {
 			return true;
 		} else {
 			return false;
@@ -80,6 +80,10 @@ function BrowseBooks() {
 	}
 
 	async function addLibraryBook(title, author) {
+		if (!user) {
+			alert('Must be logged in to add to library');
+			return;
+		}
 		try {
 
 			const status='tbr';
@@ -109,8 +113,10 @@ function BrowseBooks() {
 	// () => {} is the setup param
 	// [] tells react that the effect doesn't depend on any changing props or state values
 	useEffect(() => {
-		if (!user) return;
 		getBooks();
+
+		if (!user) return;
+		
 		getLibraryInfo();
 
 	}, [user]);
@@ -150,7 +156,7 @@ function BrowseBooks() {
 
 	async function handleFilter() {
 
-		if (user.preferences == null) {
+		if (user?.preferences == null) {
 			alert('Your preferences have not been defined. Edit in your profile settings!');
 			return;
 		} else if (user.preferences.length <= 0) {

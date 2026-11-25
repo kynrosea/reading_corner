@@ -168,7 +168,7 @@ function Preferences() {
 
 		console.log('Preferences: ', userData.preferences);
 		alert('Preferences have been updated!');
-		//navigate('/');
+		navigate('/');
 	}
 	
 	useEffect(() => {

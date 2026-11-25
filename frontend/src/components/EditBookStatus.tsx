@@ -42,7 +42,18 @@ export default function EditBookStatus({
 	async function saveStatus() {
 		setLoading(true);
 		setMessage('');
-
+		let updateData = {
+			status
+		};
+		
+		if (status === 'read') {
+			
+			const today: string = new Date().toLocaleDateString('en-CA');
+			updateData = {
+				status,
+				finished_date: today
+			};
+		}
 		try {
 			const response = await fetch(
 				`/library/${encodeURIComponent(username)}/${encodeURIComponent(title)}/${encodeURIComponent(author)}`, {
@@ -50,9 +61,7 @@ export default function EditBookStatus({
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify({
-						status: status,
-					}),
+					body: JSON.stringify(updateData),
 				}
 			);
 

@@ -109,24 +109,25 @@ function Rewards() {
 	}
 
 	useEffect(() => {
-		if (!user) {
-			return (
-				<div className='login-prompt'>
-					<h1>Butterfly Garden</h1>
-					<p>Please log in to view your garden.</p>
-					<Link to='/login'>
-						<button className='basic-button'>Go to Login</button>
-					</Link>
-					
-				</div>
-			);
-		}
+		if (!user) return;
 
 		void loadRewards();
 		void loadLeaves();
 
 	}, [user]);
-
+	
+	if (!user) {
+		return (
+			<div className='login-prompt'>
+				<h1>Butterfly Garden</h1>
+				<p>Please log in to view your garden.</p>
+				<Link to='/login'>
+					<button className='basic-button'>Go to Login</button>
+				</Link>
+				
+			</div>
+		);
+	}
 	
 
 	return (
