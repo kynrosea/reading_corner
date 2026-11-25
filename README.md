@@ -73,6 +73,7 @@ The signup feature is fully functioning, but if you want to see an account with 
 ## Notes
 - Reading Corner uses SQLite as its primary persistent data storage.
 - Database operations are performed through the Flask backend using SQL.
+- All sql files are held in the backend. You can access it through this navigation link: [backend/app/sql](backend/app/sql)
 - There is a couple of assumptions and limitations in this application
     - Assumption: There are not many, if any, books with duplicate titles and authors.
     - Limitation: User can manipulate the reward system by switching between statuses.
