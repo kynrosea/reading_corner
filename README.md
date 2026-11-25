@@ -9,7 +9,7 @@ The signup feature is fully functioning, but if you want to see an account with 
 ## Languages and Frameworks Used
 - Frontend: React, TypeScript, Vite
 - Backend: Python, Flask
-- Database: SQLite
+- DBMS: SQLite
 
 ## Requirements
 - Python: 3.12.3
