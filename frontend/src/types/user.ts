@@ -1,4 +1,4 @@
-import { Preference } from './preference.ts';
+import type { Preference } from './preference.ts';
 
 // interface for user object
 export interface User {

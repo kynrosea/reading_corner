@@ -348,6 +348,9 @@ def add_user_preferences(username):
             (user_id, tag_id, does_like)
             VALUES
             (?,?,?)
+            ON CONFLICT (user_id, tag_id)
+            DO UPDATE
+            SET does_like=1
         '''
 
         cursor = conn.execute(sql, (user_id, tag_id, does_like))
@@ -398,7 +401,7 @@ def get_user_preferences(username):
             FROM user_preferences AS ur
             JOIN users AS u
                 ON u.user_id = ur.user_id
-            WHERE u.username=?
+            WHERE u.username=? AND does_like=1
         '''
 
         rows = conn.execute(sql, (username,)).fetchall()
@@ -407,12 +410,8 @@ def get_user_preferences(username):
 
         if rows == []:
             
-            response = {
-                'data' : [],
-                'message' : 'user has no preferences'
-            }
             
-            return jsonify(response), 200
+            return [], 200
 
         return jsonify([dict(r) for r in rows]), 200
     
@@ -481,12 +480,7 @@ def get_leaderboard():
     close_db()
     
     if rows == []:
-        response = {
-            'data' : [],
-            'message' : 'no users on the leaderboard'
-        }
-        
-        return jsonify(response), 200
+        return [], 200
 
     return jsonify([dict(r) for r in rows]), 200
 

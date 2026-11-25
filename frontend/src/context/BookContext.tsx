@@ -1,5 +1,7 @@
 import type { Book } from '../types/book.ts';
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect } from 'react';
+
+import type { ReactNode } from 'react';
 
 interface BookContextType {
 	// either a valid book obj or no book

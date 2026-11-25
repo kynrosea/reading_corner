@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
 import './Leaderboard.css';
 
 interface Record {
@@ -10,26 +9,24 @@ interface Record {
 function Leaderboard() {
 
 	const [records, setRecords] = useState<Record[]>([]);
-	const [showRecords, setShowRecords] = useState(false);
 	const [message, setMessage] = useState('');
 
 	async function getLeaderboard() {
 		try {
 			const response = await fetch('/users/leaderboard');
 			if (!response.ok) {
-				const errorData = response.json();
+				const errorData = await response.json();
 				throw new Error(errorData.error);
 			}
 
 			const data: Record[] = await response.json();
 
-			if (data === []) {
+			if (data.length === 0) {
 				setMessage('No users on public leaderboard');
 			}
 
 			console.log(data);
 			setRecords(data);
-			setShowRecords(true);
 		} catch (error) {
 			console.error(error);
 			alert(error.message);

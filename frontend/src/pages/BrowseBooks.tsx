@@ -19,7 +19,6 @@ function BrowseBooks() {
 	// we want an array of book objects
 	// the initial value is an empty array
 	const [books, setBooks] = useState<Book[]>([]);
-	const [showBooks, setShowBooks] = useState(false);
 	const [message, setMessage] = useState('');
 	
 	const [libraryInfo, setLibraryInfo] = useState<Book[]>([]);
@@ -42,7 +41,6 @@ function BrowseBooks() {
 			//console.log(data);
 			
 			setBooks(data);
-			setShowBooks(true);
 		} catch (error) {
 			console.error(error)
 			alert(error.message);
@@ -145,7 +143,6 @@ function BrowseBooks() {
 			}	
 		
 			setBooks(data);
-			setShowBooks(true);
 
 		} catch (error) {
 
@@ -179,11 +176,8 @@ function BrowseBooks() {
 			}
 
 			const data: Book[] = await response.json();
-			if (data === []) {
-				return;
-			}
+			
 			setBooks(data);
-			setShowBooks(true);
 			console.log(data);
 			console.log('Preferences: ', user.preferences);
 			

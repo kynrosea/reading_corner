@@ -1,5 +1,5 @@
-import { useState, useContext } from 'react';
-import type { User } from '../types/user.ts';
+import { useContext } from 'react';
+import type { Preference } from '../types/preference.ts';
 import { UserContext } from '../context/UserContext';
 import { useNavigate } from 'react-router';
 import './Login.css';
@@ -12,7 +12,7 @@ function Login() {
 		throw new Error('UserContext must be used within UserProvider');
 	}
 
-	const { user, setUser } = userContext;
+	const { setUser } = userContext;
 
 	async function handleLogin(e) {
 		e.preventDefault();
@@ -20,11 +20,6 @@ function Login() {
 		const formData = new FormData(form);
 		const username = formData.get('username');
 		const email = formData.get('email');
-
-		const userData = {
-			username,
-			email
-		}
 
 		try {
 			const response = await fetch(`/users/login?username=${username}&email=${email}`)
@@ -45,6 +40,7 @@ function Login() {
 				email: data.email,
 				birth_date: data.birth_date,
 				profile_visibility: data.profile_visibility,
+				leaf_balance: data.leaf_balance,
 				preferences
 			}
 			
@@ -78,17 +74,15 @@ function Login() {
 	return (
 		<main className='login-container'>
 			<h1>Welcome back!</h1>
-			<UserContext value={user}>
-				<form className='login-form' onSubmit={handleLogin}>
-					<h2>Enter Login Details Below</h2>
-					<label htmlFor='username'>Username: </label>
-					<input type='text' id='username' name='username' />
-					<label htmlFor='email'>Email: </label>
-					<input type='email' id='email' name='email' />
-						
-					<button className='login-button' type='submit'>Login</button>
-				</form>
-			</UserContext>
+			<form className='login-form' onSubmit={handleLogin}>
+				<h2>Enter Login Details Below</h2>
+				<label htmlFor='username'>Username: </label>
+				<input type='text' id='username' name='username' />
+				<label htmlFor='email'>Email: </label>
+				<input type='email' id='email' name='email' />
+					
+				<button className='login-button' type='submit'>Login</button>
+			</form>
 		</main>
 	);
 }

@@ -75,11 +75,7 @@ def get_user_rewards(username):
         close_db()
 
         if rows == []:
-            response = {
-                'data' : [],
-                'message' : 'user has no rewards'
-            }
-            return jsonify(response), 200
+            return [], 200
 
         return jsonify([dict(r) for r in rows]), 200
     
@@ -100,7 +96,7 @@ def add_user_reward(username):
 
     reward = request.get_json()
     
-    if not data:
+    if not reward:
         return jsonify({'error' : 'JSON object data is required'}), 400
 
     reward_id = reward.get('reward_id')

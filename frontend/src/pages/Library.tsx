@@ -1,9 +1,8 @@
-import { useState, useContext, useEffect, useRef } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { UserContext } from '../context/UserContext';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import EditBookStatus from '../components/EditBookStatus';
 import LogModal from '../components/LogModal.tsx';
-import type { Book } from '../types/book.ts';
 import './Library.css';
 
 interface Record {
@@ -25,8 +24,6 @@ interface Log {
 
 function Library() {
 
-	const navigate = useNavigate();
-
 	// if userContext is null, then the component isn't receiving the context provider
 	// if user is null, the provider exists but nobody has logged in yet
 	const userContext = useContext(UserContext);
@@ -35,15 +32,14 @@ function Library() {
 	}
 
 	const [records, setRecords] = useState<Record[]>([]);
-	const [showRecords, setShowRecords] = useState(false);
-	const [showReport, setShowReport] = useState(false);
 	const [totalBooks, setTotalBooks] = useState(0);
 	const [currentBooks, setCurrentBooks] = useState(0);
 	const [finishedBooks, setFinishedBooks] = useState(0);
 	const [logs, setLogs] = useState<Log[]>([]);
-	const [showNotes, setShowNotes] = useState(false);
-	const [showSessionTime, setShowSessionTime] = useState(false);
-	const [book, setBook] = useState<Book>();
+	const [book, setBook] = useState<{
+		title: string;
+		author: string;
+	}>();
 
 	const { user } = userContext;
 
@@ -84,7 +80,6 @@ function Library() {
 
 			console.log(data);
 			setRecords(data);
-			setShowRecords(true);
 
 		} catch (error) {
 			console.error(error.error);
@@ -114,7 +109,6 @@ function Library() {
 			setTotalBooks(report['total books']);
 			setCurrentBooks(report['currently reading']);
 			setFinishedBooks(report['finished']);
-			setShowReport(true);
 		} catch (error) {
 			console.error(error);
 			alert(error.message);
@@ -140,22 +134,6 @@ function Library() {
 			const data = await response.json();
 			console.log(data);
 			setLogs(data);
-
-			if (data.notes === null) {
-				setShowNotes(true);
-			}
-
-			if (data.session_time === null) {
-				setShowSessionTime(true);
-			}
-
-			const book_id = data.book_id;
-			const book_data: Record[] = {
-				book_id,
-				title,
-				author
-			}
-			setBook(book_data);
 
 		} catch (error) {
 			console.error(error);
@@ -256,12 +234,12 @@ function Library() {
 
 										</div>
 										<div className='log-field'>
-											{showNotes &&
+											{log.notes &&
 												<p>{log.notes}</p>
 											}
 										</div>
 										<div>
-											{showSessionTime &&
+											{log?.session_time != null &&
 												<p>{log.session_time}</p>
 											}	
 										</div>	

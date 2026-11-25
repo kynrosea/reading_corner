@@ -44,7 +44,7 @@ def get_book_reviews():
         WHERE title=? AND author=?
     '''
     row = conn.execute(sql, (title, author)).fetchone()
-    if row:
+    if not row:
         return jsonify({'error' : 'Could not find book in database'}), 404
     
     sql = '''

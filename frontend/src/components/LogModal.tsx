@@ -1,7 +1,6 @@
-import React from 'react';
 import './LogModal.css';
 
-function LogModal({ isOpen, onClose, children }: Props) {
+function LogModal({ isOpen, onClose, children }) {
 	if (!isOpen) return null;
 	
 	return (

@@ -24,6 +24,7 @@ The signup feature is fully functioning, but if you want to see an account with 
 - Create virtual environment (if not using one already): `python3 -m venv .venv`
 - Activate virtual environment: `source .venv/bin/activate`
 - Install backend dependencies: `pip install -r requirements.txt`
+- Install root dependencies: `npm install`
 - Install frontend dependencies: `npm --prefix frontend install`
 ### Database Setup
 - In the root project directory, run the bash script to build the database: `bash backend/build_db.sh`

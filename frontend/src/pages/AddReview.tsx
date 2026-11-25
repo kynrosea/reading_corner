@@ -11,7 +11,6 @@ function AddReview() {
 		throw new Error('Library must be used within UserProvider');
 	}
 
-	const [review, setReview] = useState();
 	const [books, setBooks] = useState<Book[]>([]);
 	const [addMessage, setAddMessage] = useState('');
 

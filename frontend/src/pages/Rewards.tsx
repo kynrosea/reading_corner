@@ -23,7 +23,6 @@ function Rewards() {
 
 	const [latestReward, setLatestReward] = useState<Butterfly | null>(null);
 	const [butterflies, setButterflies] = useState<Butterfly[]>([]);
-	const [message, setMessage] = useState('');
 	const [loading, setLoading] = useState(false);
 
 	const user = context?.user;
@@ -41,11 +40,8 @@ function Rewards() {
 			}
 
 			const data: Butterfly[] = await response.json();
-			if (data.data == null) {
-				setButterflies(data);
-			} else {
-				setButterflies(data.data);
-			}
+			setButterflies(data);
+			
 			console.log(data);
 		} catch (error) {
 			console.error(error);
@@ -61,25 +57,23 @@ function Rewards() {
 		}
 
 		setLoading(true);
-		setMessage('');
 
 		try {
 			const response = await fetch(`/rewards/wish/${encodeURIComponent(user!.username)}`, {
 				method: 'PUT'
 			});
 
-			const data = await response.json();
 
 			if (!response.ok) {
 				const errorData = await response.json();
 				throw new Error(errorData.error);
 			}
 
+			const data = await response.json();
 			const result = data as WishResponse;
-
+		
 			setLatestReward(result.reward);
 			setLeaves(result.remaining_leaves);
-			setMessage(`You received ${result.reward.species}!`);
 			loadRewards();
 		} catch (error) {
 			console.error(error);

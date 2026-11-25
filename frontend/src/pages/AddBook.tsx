@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import type { Book } from '../types/book.ts';
 import './AddBook.css';
 
 function AddBook() {
@@ -73,7 +71,7 @@ function AddBook() {
 						</div>
 						<div className='input-section'>
 							<label htmlFor='synopsis'>Synopsis: </label>
-							<textarea id='synopsis' name='synopsis' rows='5' cols='30' />
+							<textarea id='synopsis' name='synopsis' rows={5} cols={30} />
 						</div>
 						<div className='input-section'>
 							<label htmlFor='isbn'>ISBN: </label>
@@ -82,10 +80,6 @@ function AddBook() {
 						<div className='input-section'>
 							<label htmlFor='page_count'>Pages: </label>
 							<input type='number' id='page_count' name='page_count' />
-						</div>
-						<div className='input-section'>
-							<label htmlFor='cover'>Cover: </label>
-							<input type='file' accept='.jpg, .png' id='cover' name='cover' />
 						</div>
 					</div>
 					<div className='submit-actions'>

@@ -408,7 +408,7 @@ def get_books_by_preference(username):
         sql = '''
             SELECT tag_id
             FROM user_preferences
-            WHERE user_id=?
+            WHERE user_id=? AND does_like=1
         '''
         preferences = conn.execute(sql, (user_id,)).fetchall()
         if preferences == []:

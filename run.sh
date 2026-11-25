@@ -1,8 +1,10 @@
 #!/bin/bash
 
-
 # install backend dependencies
 pip install -r requirements.txt
+
+# install root dependences
+npm install
 
 # install frontend dependencies
 npm --prefix frontend install

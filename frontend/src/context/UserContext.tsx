@@ -1,5 +1,7 @@
 import type { User } from '../types/user.ts';
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect } from 'react';
+
+import type { ReactNode } from 'react';
 
 interface UserContextType {
 	// either a valid user obj or no user

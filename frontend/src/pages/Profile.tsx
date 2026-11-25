@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import { Link } from 'react-router';
 import type { User } from '../types/user.ts';
 import { UserContext } from '../context/UserContext';

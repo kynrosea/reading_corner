@@ -1,15 +1,8 @@
-import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router';
 import logo from '../assets/reading_corner_logo.png';
 import './Header.css';
 
 function Header() {
-
-	async function handleSearch(e) {
-		e.preventDefault()
-
-		
-	}
 
 	return (
 		<main>

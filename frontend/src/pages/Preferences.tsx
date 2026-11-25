@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router';
 import { UserContext } from '../context/UserContext';
-import type { User } from '../types/user.ts';
 import type { Preference } from '../types/preference.ts';
 import './Preferences.css';
 
@@ -21,7 +20,6 @@ function Preferences() {
 
 	const { user, setUser } = userContext;
 
-	const [preference, setPreference] = useState<Preference>();
 	const [preferences, setPreferences] = useState<Preference[]>([]);
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
 	const [selected, setSelected] = useState<number[]>();
@@ -48,10 +46,11 @@ function Preferences() {
 		const does_like = 1;
 		const preference: Preference = {
 			tag_id,
+			user_id: user.user_id,
 			does_like
-		}
+		};
 		
-		const my_prefs = preferences;
+		let my_prefs = preferences;
 		my_prefs.push(preference);
 		setPreferences(my_prefs);
 		
@@ -91,13 +90,12 @@ function Preferences() {
 		}
 		
 		let deletePrefs = [];
-		if (user.preferences != null) {
-			const prefs= new Set(preferences);
-			deletePrefs = user.preferences.filter((item) => !prefs.has(item));
+		if (selected.length > 0) {
+			const prefs= new Set(selected);
+			deletePrefs = user.preferences.filter((item) => !prefs.has(item.tag_id));
 		}
 
 		console.log('Delete: ', deletePrefs);
-		setPreferences(selected);
 		
 		for (const delPref of deletePrefs) {
 			

@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from 'react-router';
 
 interface EditBookStatusProps {
 	username: string;
@@ -18,7 +17,6 @@ export default function EditBookStatus({
 	onUpdated,
 }: EditBookStatusProps) {
 
-	const navigate = useNavigate();
 	const [status, setStatus] = useState(currentStatus);
 	const [loading, setLoading] = useState(false);
 	const [message, setMessage] = useState('');
@@ -42,9 +40,13 @@ export default function EditBookStatus({
 	async function saveStatus() {
 		setLoading(true);
 		setMessage('');
-		let updateData = {
+
+		let updateData: {
+			status: string;
+			finished_date?: string;
+		} = {
 			status
-		};
+		}
 		
 		if (status === 'read') {
 			

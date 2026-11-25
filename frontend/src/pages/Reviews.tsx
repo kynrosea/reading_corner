@@ -19,9 +19,6 @@ function Reviews() {
 	}
 
 	const [reviews, setReviews] = useState<Review[]>([]);
-	const [showReviews, setShowReviews] = useState(false);
-	const [showNewReview, setShowNewReview] = useState(false);
-	const [newReview, setNewReview] = useState<Review>();
 
 	const { user } = userContext;
 
@@ -45,7 +42,6 @@ function Reviews() {
 
 			console.log(data);
 			setReviews(data);
-			setShowReviews(true);
 		} catch (error) {
 			console.error(error.message);
 			alert(error.message);

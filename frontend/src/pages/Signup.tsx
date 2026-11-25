@@ -1,8 +1,7 @@
-import { useEffect, useState, useContext } from 'react';
+import { useContext } from 'react';
 import { UserContext } from '../context/UserContext';
 import { useNavigate } from 'react-router';
 import type { User } from '../types/user.ts';
-import type { Preference } from '../types/preference.ts';
 import './Signup.css';
 
 function Signup() {
@@ -14,8 +13,7 @@ function Signup() {
 		throw new Error('UserContext must be used within UserProvider');
 	}
 	
-	const { user, setUser } = userContext;
-	const [message, setMessage] = useState('');
+	const { setUser } = userContext;
 
 	async function handleSignup(e) {
 		e.preventDefault();
@@ -67,21 +65,19 @@ function Signup() {
 	return (
 		<main className='signup-container'>
 			<h1>Enter signup details below</h1>
-			<UserContext value={user}>
-				<form className='signup-form' onSubmit={handleSignup}>
-					<label htmlFor='username'>Username: </label>
-					<input type='text' id='username' name='username' required />
-					<label htmlFor='first_name'>First Name: </label>
-					<input type='text' id='first_name' name='first_name' required />
-					<label htmlFor='last_name'>Last Name: </label>
-					<input type='text' id='last_name' name='last_name' required />
-					<label htmlFor='email'>Email: </label>
-					<input type='email' id='email' name='email' required />
-					<label htmlFor='birth_date'>Birthday: </label>
-					<input type='date' id='birth_date' name='birth_date' required />
-					<input className='basic-button' type='submit' value='Sign Up' />
-				</form>
-			</UserContext>
+			<form className='signup-form' onSubmit={handleSignup}>
+				<label htmlFor='username'>Username: </label>
+				<input type='text' id='username' name='username' required />
+				<label htmlFor='first_name'>First Name: </label>
+				<input type='text' id='first_name' name='first_name' required />
+				<label htmlFor='last_name'>Last Name: </label>
+				<input type='text' id='last_name' name='last_name' required />
+				<label htmlFor='email'>Email: </label>
+				<input type='email' id='email' name='email' required />
+				<label htmlFor='birth_date'>Birthday: </label>
+				<input type='date' id='birth_date' name='birth_date' required />
+				<input className='basic-button' type='submit' value='Sign Up' />
+			</form>
 		</main>
 	);
 }
