@@ -3,7 +3,7 @@
 ## Project Overview
 This web application simulates a reading tracker where a user can add books to their personal collection, browse books in the database, receive rewards, and more to encourage building better reading habits. For this current submission, There are only a few key operations implemented, which will we be touched on later.
 ## Testing Note
-The signup feature works only in the backend. The frontend is not rendering correctly for that operation, so please use the following test user information to log in to test the application.
+The signup feature is fully functioning, but if you want to see an account with pre-filled data to view all reports and functionalities, then please use the following log in details.
 - Email: itzy_yuna@yahoo.com
 - Username: itzzzYUNA
 ## Languages and Frameworks Used
@@ -15,23 +15,29 @@ The signup feature works only in the backend. The frontend is not rendering corr
 - Python: 3.12.7
 - Node.js: 24.11.9
 - Required Python packages: [requirements.txt](requirements.txt)
-- Required TypeScript packages: [package.json](frontend/package.json)
+- Required TypeScript packages: [package-lock.json](frontend/package-lock.json)
 
 ## Installation and Setup
 ### Environment Setup
+- Clone this repository: `git clone https://github.com/kynrosea/reading_corner.git`
+- Make sure you move into project root directory: `cd reading_corner`
 - Create virtual environment (if not using one already): `python3 -m venv .venv`
 - Activate virtual environment: `source .venv/bin/activate`
 - Install backend dependencies: `pip install -r requirements.txt`
-- Install frontend dependencies: `npm install`
+- Install frontend dependencies: `npm --prefix frontend install`
 ### Database Setup
 - In the root project directory, run the bash script to build the database: `bash backend/build_db.sh`
 - This does not perform any queries. This ensures that we are working with the same schema and data to replicate environment and results.
 
 ## Run Instructions
 ### With run.sh script
-- I created a script that performs the setup, installation, and running of the application for you. You still to activate virtual environment though. You only have to call: `bash run.sh`
+- I created a script that performs the setup, installation, and running of the application for you. You still to activate virtual environment though.
+    - `python3 -m venv .venv`
+    - `source .venv/bin/activate`
+    - `bash run.sh`
 ### Manually
-- If you'd prefer to do the steps of installation and setup yourself, then just follow those instructions in that section. Then, once the setup is complete, do this command to run the application: `npm run dev`
+- If you'd prefer to do the steps of installation and setup yourself, just follow those instructions in that [section](#installation-and-setup). Then, once the setup is complete, do this command to run the application: `npm run dev`
+- Note: I am using Concurrently to run the backend and frontend at the same time without having to type in separate commands. `npm run dev` handles running both without any additional commands.
 ### Access the App
 - You can access the application through this link: [Reading Corner App](http://localhost:5173)
 - The full frontend URL is http://localhost:5173
@@ -57,9 +63,8 @@ When viewing all of the rewards a user has, they can make a wish if they have en
 - Other than the previously mentioned setup requirements, there are no additional configurations.
 
 ## Notes
-
-- Reading Corner uses SQLite as its primary persistent data store.
+- Reading Corner uses SQLite as its primary persistent data storage.
 - Database operations are performed through the Flask backend using SQL.
 - There is a couple of assumptions and limitations in this application
-  - Assumption: There are not many, if any, books with duplicate titles and authors.
-  - Limitation: User can manipulate the reward system but switching between statuses
+    - Assumption: There are not many, if any, books with duplicate titles and authors.
+    - Limitation: User can manipulate the reward system by switching between statuses.
