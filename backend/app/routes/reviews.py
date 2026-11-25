@@ -156,6 +156,37 @@ def add_review(username):
             raise NotFoundError('Could not find book')
 
         sql = '''
+            SELECT review_id
+            FROM reviews
+            WHERE user_id=? AND book_id=?
+        '''
+        review = conn.execute(sql, (user_id, book_id)).fetchone()
+        if review:
+            
+            review_id = review['review_id']
+
+            sql = '''
+                UPDATE reviews
+                SET rating=?,
+                    review_text=?,
+                    visibility=?,
+                    creation_date=?
+                WHERE review_id=?
+            '''
+
+            conn.execute(sql, (rating, review_text, visibility, creation_date, review_id))
+
+            sql = '''
+                SELECT *
+                FROM reviews
+                WHERE review_id=?
+            '''
+
+            review = conn.execute(sql, (review_id,)).fetchone()
+
+            return jsonify(dict(review)), 200
+
+        sql = '''
             INSERT INTO reviews
             (user_id, book_id, rating, review_text, visibility, creation_date)
             VALUES

@@ -22,7 +22,7 @@ function Preferences() {
 
 	const [preferences, setPreferences] = useState<Preference[]>([]);
 	const [availableTags, setAvailableTags] = useState<Tag[]>([]);
-	const [selected, setSelected] = useState<number[]>();
+	const [selected, setSelected] = useState<number[]>([]);
 	
 	async function getAvailableTags() {
 		try {
@@ -50,9 +50,7 @@ function Preferences() {
 			does_like
 		};
 		
-		let my_prefs = preferences;
-		my_prefs.push(preference);
-		setPreferences(my_prefs);
+		setPreferences(prev => [...prev, preference]);	
 		
 	}
 	
@@ -89,11 +87,11 @@ function Preferences() {
 			return;
 		}
 		
-		let deletePrefs = [];
-		if (selected.length > 0) {
-			const prefs= new Set(selected);
-			deletePrefs = user.preferences.filter((item) => !prefs.has(item.tag_id));
-		}
+		const prefs = new Set(selected ?? []);
+
+		const deletePrefs = (user.preferences ?? []).filter(
+			item => !prefs.has(item.tag_id)
+		);	
 
 		console.log('Delete: ', deletePrefs);
 		
@@ -182,9 +180,7 @@ function Preferences() {
 			console.log('selected: ', selected);
 			console.log('user', user.preferences);
 			setPreferences(user.preferences);
-		} else {
-			setSelected([]);
-		}
+		} 
 		
 	}, [user]);
 	

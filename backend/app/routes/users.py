@@ -341,16 +341,32 @@ def add_user_preferences(username):
         preference = conn.execute(sql, (user_id, tag_id)).fetchone()
 
         if preference:
-            return jsonify({'meesage' : 'tag already in preferences'}), 200
+
+            sql = '''
+                UPDATE user_preferences
+                SET does_like=1
+                WHERE user_id=? AND tag_id=?
+            '''
+
+            conn.execute(sql, (user_id, tag_id))
+
+            sql = '''
+                SELECT *
+                FROM user_preferences
+                WHERE preference_id=?
+            '''
+
+            preference = conn.execute(sql, (preference['preference_id'],)).fetchone()
+            
+            close_db()
+            
+            return jsonify(dict(preference)), 200
 
         sql = '''
             INSERT INTO user_preferences
             (user_id, tag_id, does_like)
             VALUES
             (?,?,?)
-            ON CONFLICT (user_id, tag_id)
-            DO UPDATE
-            SET does_like=1
         '''
 
         cursor = conn.execute(sql, (user_id, tag_id, does_like))

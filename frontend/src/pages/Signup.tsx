@@ -52,7 +52,7 @@ function Signup() {
 			}
 			const user: User = await response.json();
 			console.log(user);
-			setUser(user);
+			setUser({ ...user, preferences: [] });
 			navigate('/my-preferences');
 			
 		} catch (error) {

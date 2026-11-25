@@ -42,7 +42,7 @@ function Leaderboard() {
 			<h1>2026 Reading Leaderboard</h1>
 			<div className='leaderboard'>
 				{records.map((record, index) => (
-					<div className='leaderboard-entry'>
+					<div key={record.username} className='leaderboard-entry'>
 						<div className='leaderboard-rank'>
 							<h2>#{index+1}</h2>
 						</div>
