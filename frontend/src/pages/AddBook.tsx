@@ -1,12 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import type { Book } from '../types/book.ts';
+import './AddBook.css';
 
 function AddBook() {
-
-	const [addMessage, setAddMessage] = useState('');
-	const [deleteMessage, setDeleteMessage] = useState('');
-	const [addError, setAddError] = useState('');
-	const [deleteError, setDeleteError] = useState('');
+	const navigate = useNavigate();
 
 	async function handleSubmit(e) {
 		e.preventDefault();
@@ -47,108 +45,57 @@ function AddBook() {
 			}
 
 			console.log('Book insertion success!');
-			setAddMessage('Book added successfully!');
-			setAddError('');
-		} catch (addError) {
-			console.error(addError.message);
-			setAddError(addError.message);
-		}
-	}
-
-	async function handleDelete(e) {
-
-		e.preventDefault();
-		const form = e.target;
-		const formData = new FormData(form);
-		const title = formData.get('title');
-		const author = formData.get('author');
-
-		try {
-			const response = await fetch(`/books/book?title=${title}&author=${author}`, {
-				method: 'DELETE',
-			});
-
-			if (!response.ok) {
-				throw new Error('Failed to delete book');
-			}
-
-			console.log('Book delete successful');
-			setDeleteMessage('Book deleted successfully!');
-			setDeleteError('');
-		} catch (deleteError) {
-			console.error(deleteError);
-			setDeleteError('Book could not be deleted :(');
+			alert('Book added successfully!');
+			navigate('/browse');
+		} catch (error) {
+			console.error(error);
+			alert(error.message)
 		}
 	}
 
 	return (
 		<main>
-			<div>
-				<h2>Enter details below to add book</h2>
-				<form onSubmit={handleSubmit}>
-					<label htmlFor='title'>Title: </label>
-					<input type='text' id='title' name='title' required />
-					<br />
-					<label htmlFor='author'>Author: </label>
-					<input type='text' id='author' name='author' required />
-					<br />
-					<label htmlFor='publication_year'>Publication Year: </label>
-					<input type='number' id='publication_year' name='publication_year' required />
-					<br />
-					<label htmlFor='synopsis'>Synopsis: </label>
-					<textarea id='synopsis' name='synopsis' rows='5' cols='30' />
-					<br />
-					<label htmlFor='isbn'>ISBN: </label>
-					<input type='text' id='isbn' name='isbn' />
-					<br />
-					<label htmlFor='page_count'>Pages: </label>
-					<input type='number' id='page_count' name='page_count' />
-					<br />
-					<label htmlFor='cover'>Cover: </label>
-					<input type='file' accept='.jpg, .png' id='cover' name='cover' />
-					<br />
-					<input type='submit' value='Submit' />
-					<input type='reset' value='Reset' />
-					<br />
-					{addError && (
-						<div className='error-banner' role='alert'>
-							{addError}
+			<div className='add-container'>
+				<h1>Enter details below to add book</h1>
+				<form className='add-block' onSubmit={handleSubmit}>
+					<div className='add-form'>
+						<div className='input-section'>
+							<label htmlFor='title'>Title: </label>
+							<input type='text' id='title' name='title' required />
 						</div>
-					)}
+						<div className='input-section'>
+							<label htmlFor='author'>Author: </label>
+							<input type='text' id='author' name='author' required />
+						</div>
+						<div className='input-section'>
+							<label htmlFor='publication_year'>Publication Year: </label>
+							<input type='number' id='publication_year' name='publication_year' required />
+						</div>
+						<div className='input-section'>
+							<label htmlFor='synopsis'>Synopsis: </label>
+							<textarea id='synopsis' name='synopsis' rows='5' cols='30' />
+						</div>
+						<div className='input-section'>
+							<label htmlFor='isbn'>ISBN: </label>
+							<input type='text' id='isbn' name='isbn' />
+						</div>
+						<div className='input-section'>
+							<label htmlFor='page_count'>Pages: </label>
+							<input type='number' id='page_count' name='page_count' />
+						</div>
+						<div className='input-section'>
+							<label htmlFor='cover'>Cover: </label>
+							<input type='file' accept='.jpg, .png' id='cover' name='cover' />
+						</div>
+					</div>
+					<div className='submit-actions'>
+						<input className='basic-button' type='submit' value='Submit' />
+						<input className='basic-button' type='reset' value='Reset' />
+					</div>
 
-					{addMessage && (
-						<div className='message-banner' role='alert'>
-							{addMessage}
-						</div>
-					)}
 				</form>
 			</div>
-			<br />
-			<br />
-			<div>
-				<h2>Enter title and author below to delete book</h2>
-				<form onSubmit={handleDelete}>
-					<label htmlFor='title'>Title: </label>
-					<input type='text' id='title' name='title' required />
-					<br />
-					<label htmlFor='author'>Author: </label>
-					<input type='text' id='author' name='author' required />
-					<br />
-					<input type='submit' value='DELETE' />
-					<br />
-					{deleteError && (
-						<div className='error-banner' role='alert'>
-							{deleteError}
-						</div>
-					)}
-					
-					{deleteMessage && (
-						<div className='message-banner' role='alert'>
-							{deleteMessage}
-						</div>
-					)}
-				</form>
-			</div>
+			
 		</main>
 	);
 }

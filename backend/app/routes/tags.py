@@ -15,7 +15,7 @@ def get_available_tags():
             SELECT tag_id FROM book_tags
         )
 
-        SELECT t.tag_name 
+        SELECT * 
         FROM tags AS t
         JOIN tags_intersection AS ti
             ON ti.tag_id = t.tag_id;
@@ -83,10 +83,7 @@ def add_tag():
         return jsonify(dict(tag)), 200
     
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
-    except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}' }), 500
     except ConflictError as e:
         return jsonify({'error' : str(e)}), 409
-
 

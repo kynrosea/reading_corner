@@ -1,0 +1,63 @@
+
+:root {
+	--pastel-blue: #68748c;
+	--pastel-green: #788f7d;
+	--light-text-color: #d1ddde;
+	--dark-text-color: #274547;
+	--dark-blue: #637391;
+	--dark-green: #a1c7aa;
+	--green-shadow: #070f0b;
+	--midnight-blue: #29354a;
+}
+
+
+header {
+	background: black;
+	height: 60px;
+	padding: 10px 15px;
+}
+
+.header-logo {
+	height: 60px;
+	width: auto;
+	border-radius: 10px;
+}
+
+.header-nav {
+	display: flex;
+	gap: 10px;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.header-links {
+	display: flex;
+	gap: 10px;
+}
+
+.header-links button {
+	background-color: var(--dark-blue);
+	border: medium solid var(--midnight-blue);
+	border-radius: 15px;
+	padding: 10px;
+	font-size: 16px;
+	box-shadow: 5px 5px var(--green-shadow);
+	cursor: pointer;
+	text-align: center;
+	transition-duration: 0.2s;
+	margin: 0 5px;	
+}
+
+.header-links button:hover {
+	color: var(--dark-text-color);
+	background: white;
+	border: medium solid black;
+	font-weight: bold;
+}
+
+.header-brand {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 30px;
+}

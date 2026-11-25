@@ -131,23 +131,23 @@ def create_profile():
             WHERE username=?
         '''
 
-        close_db()
         
-        user = conn.execute(sql, (username,)).fetchone()
+        new_user = conn.execute(sql, (username,)).fetchone()
+        close_db()
         if not user:
             raise sqlite3.Error('Could not insert user')
 
 
         return jsonify(dict(new_user)), 200
 
-    except sqlite3.IntegrityError as e:
-        return jsonify({'error' : str(e)}), 500
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except EntityError as e:
         return jsonify({'error' : str(e)}), 422
     except ConflictError as e:
         return jsonify({'error' : str(e)}), 409
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
 
 @user_bp.put('/settings/<username>')
@@ -165,7 +165,7 @@ def update_user(username):
     
     first_name = data.get('first_name') or None
     last_name = data.get('last_name') or None
-    visibility = data.get('visibility') or None
+    profile_visibility = data.get('profile_visibility') or None
     
     try:
         
@@ -217,21 +217,21 @@ def update_user(username):
             if new_user['last_name'] != last_name:
                 raise sqlite3.Error('Could not update last_name')
 
-        if visibility:
+        if profile_visibility:
             sql = '''
                 UPDATE users
                 SET profile_visibility=?
                 WHERE username=?
             '''
             
-            conn.execute(sql, (visibility, username))
+            conn.execute(sql, (profile_visibility, username))
             sql = 'SELECT * FROM users WHERE username=?'
             new_user = conn.execute(sql, (username,)).fetchone()
             
             if not new_user:
                 raise sqlite3.Error('Could not retrieve user')
             
-            if new_user['profile_visibility'] != visibility:
+            if new_user['profile_visibility'] != profile_visibility:
                 raise sqlite3.Error('Could not update profile_visibility')
 
         sql = 'SELECT * FROM users WHERE username=?'
@@ -243,12 +243,12 @@ def update_user(username):
         
         return jsonify(dict(new_user)), 200
     
-    except sqlite3.IntegrityError as e:
-        return jsonify({'error' : str(e)}), 500
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
 @user_bp.delete('/<username>')
 def delete_user(username):
@@ -289,9 +289,11 @@ def delete_user(username):
         return {}, 200
     
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
 @user_bp.post('/preferences/<username>')
 def add_user_preferences(username):
@@ -306,8 +308,8 @@ def add_user_preferences(username):
     if not preference:
         return jsonify({'error' : 'JSON object data is required'}), 400
 
-    tag_id = preference['tag_id']
-    does_like = preference['does_like']
+    tag_id = preference.get('tag_id')
+    does_like = preference.get('does_like')
 
     if not tag_id or does_like is None:
         return jsonify({'error' : 'tag_id and does_like is required'}), 422
@@ -330,29 +332,16 @@ def add_user_preferences(username):
 
         user_id = user['user_id']
 
-        # checking if user has 7 preferences already
-        # user is only allowed to have a max of 7 genre preferences
         sql = '''
-            SELECT COUNT(*) AS num_preferences 
+            SELECT *
             FROM user_preferences
-            WHERE user_id=?
+            WHERE user_id=? AND tag_id=?
         '''
 
-        row = conn.execute(sql, (user_id,)).fetchone()
-        
-        # even if user has zero preferences, this should always return something
-        # since it's an aggregate statement
-        if not row:
-            raise sqlite3.Error('Could not retrieve user_preferences count')
+        preference = conn.execute(sql, (user_id, tag_id)).fetchone()
 
-        num_preferences = row['num_preferences']
-        if num_preferences >= 7:
-            close_db()
-            response = {
-                'preference_count' : 'max',
-                'message' : 'max preferences reached'
-            }
-            return jsonify(response), 200
+        if preference:
+            return jsonify({'meesage' : 'tag already in preferences'}), 200
 
         sql = '''
             INSERT INTO user_preferences
@@ -377,14 +366,14 @@ def add_user_preferences(username):
 
         return jsonify(dict(row)), 200
     
-    except sqlite3.IntegrityError as e:
-        return jsonify({'error' : str(e)}), 500
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except ConflictError as e:
         return jsonify({'error' : str(e)}), 409
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
 @user_bp.get('/preferences/<username>')
 def get_user_preferences(username):
@@ -428,9 +417,41 @@ def get_user_preferences(username):
         return jsonify([dict(r) for r in rows]), 200
     
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
+
+@user_bp.delete('/preferences/<username>/<tag_id>')
+def delete_user_preference(username, tag_id):
+    if not username:
+        return jsonify({'error' : 'username is required'}), 400
+
+    if not tag_id:
+        return jsonify({'error' : 'tag_id is required'}), 400
+
+    conn = get_db()
+
+    sql = '''
+        DELETE FROM user_preferences
+        WHERE tag_id=?
+            AND user_id=(
+                SELECT user_id
+                FROM users
+                WHERE username=?
+            )
+    '''
+    pref = conn.execute(sql, (tag_id, username)).fetchone()
+
+    close_db()
+
+    if pref:
+        return jsonify({'error' : 'preference could not be deleted'}), 500
+
+    return jsonify({'message' : 'preference successfully deleted!'}), 200
+
+    
 
 # getting a leaderboard of all public users who have completed at least 2 books in the current year
 @user_bp.get('/leaderboard')

@@ -84,9 +84,11 @@ def get_user_rewards(username):
         return jsonify([dict(r) for r in rows]), 200
     
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
 # add reward to user_rewards table
 @reward_bp.post('/<username>')
@@ -149,11 +151,11 @@ def add_user_reward(username):
         return jsonify(dict(row)), 200
     
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
-    except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
     
 # add reward to rewards table
 @reward_bp.post('/')
@@ -212,11 +214,11 @@ def add_reward():
         return jsonify(dict(row)), 200
     
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
-    except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except ConflictError as e:
         return jsonify({'error' : str(e)}), 409
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
 # allows a user to randomly obtain a reward through the wish system
 # the logic for the wish system, including rules/constraints is written here
@@ -328,11 +330,11 @@ def wish(username):
 
     except sqlite3.Error as e:
         conn.execute('ROLLBACK')
-        return jsonify({'error' : str(e)}), 500
-    except sqlite3.Error as e:
-        conn.execute('ROLLBACK')
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        conn.execute('ROLLBACK')
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
 

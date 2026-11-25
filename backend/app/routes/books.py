@@ -147,12 +147,12 @@ def add_book():
 
         return jsonify(dict(book)), 200
     
-    except sqlite3.IntegrityError as e:
-        return jsonify({'error' : 'Something went wrong: could not add book :('}), 500
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except ConflictError as e:
         return jsonify({'error' : str(e)}), 409
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
     
 # deleting book from database
 @book_bp.delete('/book')
@@ -297,14 +297,14 @@ def update_book(book_id):
         
         return jsonify(dict(book)), 200
     
-    except sqlite3.IntegrityError as e:
-        conn.execute('ROLLBACK')
-        return jsonify({'error' : str(e)}), 500
     except sqlite3.Error as e:
         conn.execute('ROLLBACK')
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        conn.execute('ROLLBACK')
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
     
 # getting all tags associated with a book
 @book_bp.get('/<book_id>/tags')
@@ -386,4 +386,63 @@ def add_book_tag(book_id):
         return jsonify({'error' : 'Could not insert book'}), 500
 
     return jsonify(dict(row)), 200
-    
+   
+@book_bp.get('/filter/<username>')
+def get_books_by_preference(username):
+    if not username:
+        return jsonify({'error' : 'username is required'}), 400
+    try:
+        conn = get_db()
+
+        sql = '''
+            SELECT user_id
+            FROM users
+            WHERE username=?
+        '''
+        user = conn.execute(sql, (username,)).fetchone()
+        if not user:
+            return jsonify({'error' : 'Could not find user'}), 404
+
+        user_id = user['user_id']
+
+        sql = '''
+            SELECT tag_id
+            FROM user_preferences
+            WHERE user_id=?
+        '''
+        preferences = conn.execute(sql, (user_id,)).fetchall()
+        if preferences == []:
+            return [], 200
+
+        books = []
+
+        sql = '''
+            SELECT *
+            FROM books
+            WHERE book_id IN (
+                SELECT book_id
+                FROM book_tags
+                WHERE tag_id=?
+            )
+        '''
+        
+        for pref in preferences:
+            rows = conn.execute(sql, (pref['tag_id'],)).fetchall()
+            if rows == []:
+                continue
+            books.extend(rows)
+
+        books = set(books)
+        
+        close_db()
+
+        if not books:
+            return [], 200
+
+        return jsonify([dict(b) for b in books]), 200
+   
+    except sqlite3.Error as e:
+        return jsonify({'error' : f'Unexpected error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
+

@@ -1,14 +1,11 @@
 #!/bin/bash
 
-# initialize and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
 
 # install backend dependencies
 pip install -r requirements.txt
 
 # install frontend dependencies
-npm install
+npm --prefix frontend install
 
 # rebuild fresh copy of database
 bash backend/build_db.sh

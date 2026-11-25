@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
+import './Leaderboard.css';
 
 interface Record {
 	username: string,
@@ -11,13 +12,13 @@ function Leaderboard() {
 	const [records, setRecords] = useState<Record[]>([]);
 	const [showRecords, setShowRecords] = useState(false);
 	const [message, setMessage] = useState('');
-	const [error, setError] = useState('');
 
 	async function getLeaderboard() {
 		try {
 			const response = await fetch('/users/leaderboard');
 			if (!response.ok) {
-				throw new Error('Failed to retrieve leaderboard');
+				const errorData = response.json();
+				throw new Error(errorData.error);
 			}
 
 			const data: Record[] = await response.json();
@@ -29,10 +30,9 @@ function Leaderboard() {
 			console.log(data);
 			setRecords(data);
 			setShowRecords(true);
-			setError('');
 		} catch (error) {
-			console.error(error)
-			setError('Could not load leaderboard');
+			console.error(error);
+			alert(error.message);
 		}
 	}
 
@@ -41,18 +41,21 @@ function Leaderboard() {
 	}, []);
 
 	return (
-		<main>
-			<header>
-				<Link to='/'>
-					<button>Home</button>
-				</Link>
-			</header>
+		<main className='leaderboard-container'>
 			<h1>2026 Reading Leaderboard</h1>
-			<div>
-				{records.map((record) => (
-					<div>
-						<h3>{record.username}</h3>
-						<p>{record.books_completed}</p>
+			<div className='leaderboard'>
+				{records.map((record, index) => (
+					<div className='leaderboard-entry'>
+						<div className='leaderboard-rank'>
+							<h2>#{index+1}</h2>
+						</div>
+						<div className='leaderboard-user'>
+							<h3>{record.username}</h3>
+						</div>
+						<div className='leaderboard-score'>
+							<p>{record.books_completed}</p>
+							<p>books finished</p>
+						</div>
 					</div>
 				))}
 			</div>

@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router';
 
 interface EditBookStatusProps {
 	username: string;
@@ -16,13 +17,27 @@ export default function EditBookStatus({
 	currentStatus,
 	onUpdated,
 }: EditBookStatusProps) {
+
+	const navigate = useNavigate();
 	const [status, setStatus] = useState(currentStatus);
 	const [loading, setLoading] = useState(false);
-	const [message, setMessage] = useState("");
+	const [message, setMessage] = useState('');
+	const [showMessage, setShowMessage] = useState<boolean>(false);
 
 	useEffect(() => {
 		setStatus(currentStatus);
 	}, [currentStatus]);
+
+	// sets a timeout function so that the message will disappear after 1.5 seconds
+	useEffect(() => {
+		if (!showMessage) return;
+
+		const timer = setTimeout(() => {
+			setShowMessage(false);
+		}, 1500);
+
+		return () => clearTimeout(timer);
+	}, [showMessage]);
 
 	async function saveStatus() {
 		setLoading(true);
@@ -57,7 +72,8 @@ export default function EditBookStatus({
 					? `Book updated! You earned ${data.reward.leaves_earned} leaves!`
 					: 'Reading status updated!'
 			);
-
+			
+			setShowMessage(true);
 		
 		} catch (error) {
 			console.error(error);
@@ -85,13 +101,15 @@ export default function EditBookStatus({
 			</select>
 
 			<button
+				className='basic-button'
 				onClick={saveStatus}
-				disabled={loading || status === currentStatus}
+				disabled={loading}
 			>
 				{loading ? 'Saving...' : 'Save Status'}
 			</button>
 
-			{message && <p>{message}</p>}
+			{showMessage && <p>{message}</p>}
+
 		</div>
 	);
 }

@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from app.db import get_db, close_db
 import sqlite3
 from app.errors import NotFoundError
+from datetime import date
 
 review_bp = Blueprint('review', __name__)
 
@@ -82,7 +83,7 @@ def get_user_reviews(username):
         return jsonify({'error' : 'Could not find user'}), 404
 
     sql = '''
-        SELECT u.username, b.title, b.author, r.review_text, r.rating 
+        SELECT r.review_id, u.username, b.title, b.author, r.review_text, r.rating 
         FROM reviews AS r 
         JOIN users AS u 
             ON u.user_id = r.user_id 
@@ -115,7 +116,7 @@ def add_review(username):
         return jsonify({'error' : 'JSON object required'}), 400
 
     book_id = review_data.get('book_id')
-    creation_date = review_data.get('creation_date')
+    creation_date = date.today()
     review_text = review_data.get('review_text') or None
     visibility = review_data.get('visibility') or None
     rating = review_data.get('rating')
@@ -156,12 +157,12 @@ def add_review(username):
 
         sql = '''
             INSERT INTO reviews
-            (user_id, book_id, rating, review_text, visibility)
+            (user_id, book_id, rating, review_text, visibility, creation_date)
             VALUES
-            (?,?,?,?,?)
+            (?,?,?,?,?, ?)
         '''
         
-        cursor = conn.execute(sql, (user_id, book_id, rating, review_text, visibility))
+        cursor = conn.execute(sql, (user_id, book_id, rating, review_text, visibility, creation_date))
 
         sql = '''
             SELECT * 
@@ -176,9 +177,9 @@ def add_review(username):
             raise sqlite3.Error('Could not insert review')
 
         return jsonify(dict(review)), 200
-    except sqlite3.IntegrityError as e:
-        return jsonify({'error' : str(e)}), 500
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500

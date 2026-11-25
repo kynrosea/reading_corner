@@ -28,7 +28,9 @@ def get_user_library(username):
         return jsonify([dict(b) for b in books]), 200
 
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)})
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
             
     
 @library_bp.put('/<username>/<title>/<author>')
@@ -286,14 +288,14 @@ def update_library_book(username, title, author):
 
         return jsonify({'update' : dict(update), 'reward': reward}), 200
     
-    except sqlite3.IntegrityError as e:
-        conn.execute('ROLLBACK')
-        return jsonify({'error' : str(e)}), 500
     except sqlite3.Error as e:
         conn.execute('ROLLBACK')
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        conn.execute('ROLLBACK')
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
    
 
 @library_bp.post('/<username>/<author>/<title>')
@@ -378,14 +380,14 @@ def add_library_book(username, author, title):
        
         return jsonify(dict(row)), 200
    
-    except sqlite3.IntegrityError as e:
-        return jsonify({'error' : str(e)}), 500
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
     except ConflictError as e:
         return jsonify({'error' : str(e)}), 409
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
 
 @library_bp.get('/<username>/query')
@@ -485,7 +487,57 @@ def filter_library(username):
         return jsonify([dict(r) for r in results.values()]), 200
 
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
+
+@library_bp.get('/<username>/report')
+def get_library_report(username):
+    if not username:
+        return jsonify({'error' : 'username is required'}), 400
+
+    try:
+
+        conn = get_db()
+
+        report = {}
+
+        sql = '''
+            SELECT COUNT(*) AS curr_reading
+            FROM user_books
+            WHERE status='currently reading'
+                AND username=?
+        '''
+        
+        row = conn.execute(sql, (username,)).fetchone()
+        report['currently reading'] = row['curr_reading']
+        
+        sql = '''
+            SELECT COUNT(*) AS total
+            FROM user_books
+            WHERE username=?
+        '''
+        row = conn.execute(sql, (username,)).fetchone()
+        report['total books'] = row['total']
+
+        sql = '''
+            SELECT COUNT(*) AS finished
+            FROM user_books
+            WHERE username=?
+                AND status='read'
+        '''
+        row = conn.execute(sql, (username,)).fetchone()
+        report['finished'] = row['finished']
+
+        close_db()
+
+        return jsonify(report), 200
+        
+
+    except sqlite3.Error as e:
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
 @library_bp.get('/logs/<username>')
 def get_user_reading_logs(username):
@@ -524,10 +576,53 @@ def get_user_reading_logs(username):
         return jsonify([dict(r) for r in rows]), 200
 
     except sqlite3.Error as e:
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        return jsonify({'error' : f'Something went wrong: {str(e)}'}), 500
 
+@library_bp.get('/logs/<username>/<author>/<title>')
+def get_book_reading_logs(username, author, title):
+    if not username:
+        return jsonify({'error' : 'username is required'}), 400
+    if not author:
+        return jsonify({'error' : 'author is required'}), 400
+    if not title:
+        return jsonify({'error' : 'title is required'}), 400
+    
+    try:
+        conn = get_db()
+    
+        sql = '''
+            SELECT *
+            FROM reading_logs
+            WHERE (user_id, book_id) = (
+                    SELECT user_id, book_id
+                    FROM user_books
+                    WHERE username=? 
+                        AND author=? 
+                        AND title=?
+            )
+        '''
+
+        logs = conn.execute(sql, (username, author, title)).fetchall()
+        close_db()
+        if logs == []:
+            return [], 200
+
+        return jsonify([dict(l) for l in logs]), 200
+
+    except sqlite3.Error as e:
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
+    except NotFoundError as e:
+        return jsonify({'error' : str(e)}), 404
+    except Exception as e:
+        return jsonify({'error' : f'Unexpected error: {str(e)}'}), 500
+        
+        
+    
+    
 @library_bp.post('/logs/<username>')
 def add_reading_log(username):
     if not username:
@@ -624,12 +719,9 @@ def add_reading_log(username):
 
         return jsonify(dict(row)), 200
 
-    except sqlite3.IntegrityError as e:
-        conn.execute('ROLLBACK')
-        return jsonify({'error' : str(e)}), 500
     except sqlite3.Error as e:
         conn.execute('ROLLBACK')
-        return jsonify({'error' : str(e)}), 500
+        return jsonify({'error' : f'Unexpected Error: {str(e)}'}), 500
     except NotFoundError as e:
         conn.execute('ROLLBACK')
         return jsonify({'error' : str(e)}), 404

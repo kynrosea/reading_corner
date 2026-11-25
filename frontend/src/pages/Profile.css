@@ -1,0 +1,48 @@
+
+.profile-container {
+	margin: 0 auto;
+	padding: 50px;
+	max-width: 85%;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+
+.profile-form {
+	display: grid;
+	margin: 0 auto;
+	width: 50%;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 20px;
+	align-items: center;
+}
+
+@media (max-width: 800px) {
+	.profile-form {
+		width: 75%;
+	}
+}
+
+.profile-form div {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	align-items: center;
+	max-width: 50px;
+	margin-inline: auto;
+}
+
+.profile-form label {
+	font-size: 18px;
+	font-weight: 600;
+	margin-bottom: 0;
+	margin-left: 5px;
+}
+
+.submit-actions {
+	display: flex;
+	gap: 10px;
+	grid-column: 1 / -1;
+	margin-top: 25px;
+	justify-content: center;
+}

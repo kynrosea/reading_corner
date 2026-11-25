@@ -1,5 +1,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { UserContext } from '../context/UserContext';
+import { Link } from 'react-router';
+import './Rewards.css';
 
 
 interface Butterfly {
@@ -34,29 +36,29 @@ function Rewards() {
 			);
 
 			if (!response.ok) {
-				throw new Error('Could not load user rewards')
+				const errorData = await response.json();
+				throw new Error(errorData.error);
 			}
 
 			const data: Butterfly[] = await response.json();
-
-			setButterflies(data);
+			if (data.data == null) {
+				setButterflies(data);
+			} else {
+				setButterflies(data.data);
+			}
+			console.log(data);
 		} catch (error) {
 			console.error(error);
-			setMessage("Unable to load your butterflies.");
+			alert(error.message);
 		}
 	}
 
-	useEffect(() => {
-		if (!user) return;
-
-		
-		void loadRewards();
-		void loadLeaves();
-		
-	}, [user]);
-
 	async function makeWish() {
 		if (!user || loading) return;
+		if (leaves < 100) {
+			alert('Need 100 leaves to make a wish! Read more books to earn more!');
+			return;
+		}
 
 		setLoading(true);
 		setMessage('');
@@ -69,7 +71,8 @@ function Rewards() {
 			const data = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data.message ?? 'Unable to make a wish');
+				const errorData = await response.json();
+				throw new Error(errorData.error);
 			}
 
 			const result = data as WishResponse;
@@ -77,10 +80,10 @@ function Rewards() {
 			setLatestReward(result.reward);
 			setLeaves(result.remaining_leaves);
 			setMessage(`You received ${result.reward.species}!`);
+			loadRewards();
 		} catch (error) {
-			setMessage(
-				error instanceof Error ? error.message : 'Something went wrong'
-			);
+			console.error(error);
+			alert(error.message);
 		} finally {
 			setLoading(false);
 		}
@@ -93,53 +96,74 @@ function Rewards() {
 			);
 
 			if (!response.ok) {
-				throw new Error('Could not load leaf balance');
+				const errorData = await response.json();
+				throw new Error(errorData.error);
 			}
 
 			const data = await response.json();
 			setLeaves(data.leaf_balance);
 		} catch (error) {
 			console.error(error);
-			setMessage('Unable to load your leaf balance.');
+			alert(error.message);
 		}
 	}
 
-	if (!user) {
-		return <p>Please log in to view your rewards.</p>
-	}
+	useEffect(() => {
+		if (!user) {
+			return (
+				<div className='login-prompt'>
+					<h1>Butterfly Garden</h1>
+					<p>Please log in to view your garden.</p>
+					<Link to='/login'>
+						<button className='basic-button'>Go to Login</button>
+					</Link>
+					
+				</div>
+			);
+		}
+
+		void loadRewards();
+		void loadLeaves();
+
+	}, [user]);
+
+	
 
 	return (
-		<main>
+		<div className='wish-container'>
 			<h1>Butterfly Garden 🦋💮</h1>
-			<h2>Leaves: {leaves} 🍃</h2>
+					
+			<div className='wish'>
+				<h2>Leaves: {leaves} 🍃</h2>
 
-			<button onClick={makeWish} disabled={loading || leaves < 100}>
-				{loading ? 'Making a wish...' : 'Make a wish - 100 Leaves'}
-			</button>
+				<button onClick={makeWish} disabled={loading}>
+					{loading ? 'Making a wish...' : 'Make a wish - 100 Leaves'}
+				</button>
+			</div>
 			{latestReward && (
-				<div>
-					<h3>You received: {latestReward.species}!</h3>
-					<p>Rarity: {latestReward.rarity}</p>
-				</div>
-			
+					<div className='reward-card'>
+						<h3>You received: {latestReward.species}!</h3>
+						<p>Rarity: {latestReward.rarity}</p>
+					</div>
+				
 			)}
 
-			<p>{message}</p>
-
-			{butterflies.length === 0 ? (
-				<p>You haven't collected any butterflies yet!</p>
-			) : (
-				<div>
-					{butterflies.map((butterfly) => (
-						<div key={butterfly.reward_id}>
-							<h3>{butterfly.species}</h3>
-							<p>Rarity: {butterfly.rarity}</p>
-							<p>Duplicates: {butterfly.duplicate_count}</p>
-						</div>
-					))}		
-				</div>
-			)}
-		</main>
+			<div className='collection-1'>
+				{(butterflies == null || butterflies.length === 0) ? (
+					<h3>You haven't collected any butterflies yet!</h3>
+				) : (
+					<div className='collection'>
+						{butterflies.map((butterfly) => (
+							<div className='butterfly-card' key={butterfly.reward_id}>
+								<h3>{butterfly.species}</h3>
+								<p>Rarity: {butterfly.rarity}</p>
+								<p>Duplicates: {butterfly.duplicate_count}</p>
+							</div>
+						))}		
+					</div>
+				)}
+			</div>
+		</div>
 	);
 }
 

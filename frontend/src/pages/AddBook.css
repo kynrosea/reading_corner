@@ -1,0 +1,64 @@
+.add-container {
+	margin: 0 auto;
+	padding: 50px;
+	max-width: 85%;
+	align-items: center;
+	justify-content: center;
+}
+
+.add-container h1 {
+	font-size: 3em;
+	color: white;
+	margin: 25px 5px;
+	text-align: center;
+	text-shadow: 1px 2px 2px var(--midnight-blue);
+}
+
+.add-block {
+	background-color: var(--dark-green);
+	color: var(--dark-text-color);
+	border: medium solid white;
+	border-radius: 25px;
+	padding: 25px;
+	width: 75%;
+	margin: 5px auto;
+
+}
+
+.add-form {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 20px;
+	align-items: center;
+}
+
+.input-section {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	align-items: center;
+	max-width: 50px;
+	margin-inline: auto;
+}
+
+.add-form label {
+	font-size: 18px;
+	font-weight: 600;
+	margin-bottom: 0;
+	margin-left: 5px;
+}
+
+.add-form > :last-child:nth-child(odd) {
+	grid-column: 1 / -1;
+	justify-self: center;
+	width: 50%;
+}
+
+.submit-actions {
+	display: flex;
+	gap: 10px;
+	grid-column: 1 / -1;
+	margin-top: 25px;
+	justify-content: center;
+}
+

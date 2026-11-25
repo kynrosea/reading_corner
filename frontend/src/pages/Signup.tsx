@@ -2,6 +2,8 @@ import { useEffect, useState, useContext } from 'react';
 import { UserContext } from '../context/UserContext';
 import { useNavigate } from 'react-router';
 import type { User } from '../types/user.ts';
+import type { Preference } from '../types/preference.ts';
+import './Signup.css';
 
 function Signup() {
 
@@ -14,7 +16,6 @@ function Signup() {
 	
 	const { user, setUser } = userContext;
 	const [message, setMessage] = useState('');
-	const [error, setError] = useState('');
 
 	async function handleSignup(e) {
 		e.preventDefault();
@@ -46,54 +47,40 @@ function Signup() {
 				body: JSON.stringify(userData)
 			});
 
-			if (response.status === 400) {
-				setError('Check input fields and try again!');
-			} else if (!response.ok) {
-				throw new Error('Failed to add user');
+			if (!response.ok) {
+				const errorData = await response.json();
+				let errorMessage = 'User could not be added';
+				throw new Error(errorData.error || errorMessage);
 			}
 			const user: User = await response.json();
 			console.log(user);
 			setUser(user);
-			setError('');
-			navigate('/');
+			navigate('/my-preferences');
 			
 		} catch (error) {
-			console.error(error)
-			setError('User could not be added :(');
+			console.error(error);
+			alert(error.message);
 		}
 	}
+
 	
 	return (
-		<main>
+		<main className='signup-container'>
 			<h1>Enter signup details below</h1>
 			<UserContext value={user}>
-				<form onSubmit={handleSignup}>
+				<form className='signup-form' onSubmit={handleSignup}>
 					<label htmlFor='username'>Username: </label>
 					<input type='text' id='username' name='username' required />
-					<br />
 					<label htmlFor='first_name'>First Name: </label>
 					<input type='text' id='first_name' name='first_name' required />
-					<br />
 					<label htmlFor='last_name'>Last Name: </label>
 					<input type='text' id='last_name' name='last_name' required />
-					<br />
 					<label htmlFor='email'>Email: </label>
 					<input type='email' id='email' name='email' required />
-					<br />
 					<label htmlFor='birth_date'>Birthday: </label>
 					<input type='date' id='birth_date' name='birth_date' required />
-					<br />
-					<br />
-					<input type='submit' value='SIGN UP' />
-					<br />
-					<br />
-					{error && (
-						<div className='error-banner' role='alert'>
-							{error}
-						</div>
-					)}
+					<input className='basic-button' type='submit' value='Sign Up' />
 				</form>
-				
 			</UserContext>
 		</main>
 	);

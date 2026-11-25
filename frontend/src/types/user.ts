@@ -1,3 +1,4 @@
+import { Preference } from './preference.ts';
 
 // interface for user object
 export interface User {
@@ -5,6 +6,9 @@ export interface User {
 	username: string,
 	email: string,
 	first_name: string,
+	last_name: string,
 	leaf_balance: number,
-	profile_visibility: string
+	profile_visibility: string,
+	birth_date: string,
+	preferences: Preference[]
 }
