@@ -3,7 +3,7 @@
 ## Project Overview
 This web application simulates a reading tracker where a user can add books to their personal collection, browse books in the database, receive rewards, and more to encourage building better reading habits. For the final submission, I tried to implement at least one logical function for each table in my database to simulate a real reading tracking application. I want to demonstrate a truly functionable application.
 ## Testing Note
-The signup feature is fully functioning, but if you want to see an account with pre-filled data to view all reports and functionalities, then please use the following log in details.
+The signup feature is fully functioning, but if you want to see an account with pre-filled data to view all reports and functionalities, then please use the following log in details. You have to visit the main application URL in a new tab or window to log out and sign back in.
 - Email: itzy_yuna@yahoo.com
 - Username: itzzzYUNA
 ## Languages and Frameworks Used
@@ -77,3 +77,4 @@ The signup feature is fully functioning, but if you want to see an account with 
     - Assumption: There are not many, if any, books with duplicate titles and authors.
     - Limitation: User can manipulate the reward system by switching between statuses.
     - Limitation: When updating status, the finished_date is automatically assumed as the current date.
+    - Limitation: There is no log out feature.
